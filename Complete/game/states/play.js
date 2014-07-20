@@ -46,7 +46,7 @@
     });
 
       // game time
-      this.game_time = 750;
+      this.game_time = 2750;
       this.game_time_text = this.game.add.text(this.game.width - 122, 20, "Time: 60", {
         font: "26px Arial",
         fill: "#ffffff",
