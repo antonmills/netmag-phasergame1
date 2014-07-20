@@ -33,8 +33,8 @@ Phaser.World = function (game) {
     * @property {Phaser.Camera} camera - Camera instance.
     */
     this.camera = null;
-
-};
+    
+}
 
 Phaser.World.prototype = Object.create(Phaser.Group.prototype);
 Phaser.World.prototype.constructor = Phaser.World;
@@ -57,7 +57,7 @@ Phaser.World.prototype.boot = function () {
 
     this.game.stage.addChild(this);
 
-};
+}
 
 /**
 * Updates the size of this world. Note that this doesn't modify the world x/y coordinates, just the width and height.
@@ -90,19 +90,21 @@ Phaser.World.prototype.setBounds = function (x, y, width, height) {
 
     this.game.physics.setBoundsToWorld();
 
-};
+}
 
 /**
 * Destroyer of worlds.
-*
-* @method Phaser.World#shutdown
+* @method Phaser.World#destroy
 */
-Phaser.World.prototype.shutdown = function () {
+Phaser.World.prototype.destroy = function () {
 
-    //  World is a Group, so run a soft destruction on this and all children.
-    this.destroy(true, true);
+    this.camera.reset();
 
-};
+    this.game.input.reset(true);
+
+    this.removeAll();
+
+}
 
 /**
 * @name Phaser.World#width

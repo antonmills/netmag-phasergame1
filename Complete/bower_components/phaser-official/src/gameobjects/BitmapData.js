@@ -24,7 +24,7 @@ Phaser.BitmapData = function (game, key, width, height) {
     if (typeof height === 'undefined') { height = 100; }
 
     /**
-    * @property {Phaser.Game} game - A reference to the currently running game.
+    * @property {Phaser.Game} game - A reference to the currently running game. 
     */
     this.game = game;
 
@@ -37,7 +37,7 @@ Phaser.BitmapData = function (game, key, width, height) {
     * @property {number} width - The width of the BitmapData in pixels.
     */
     this.width = width;
-
+    
     /**
     * @property {number} height - The height of the BitmapData in pixels.
     */
@@ -48,7 +48,7 @@ Phaser.BitmapData = function (game, key, width, height) {
     * @default
     */
     this.canvas = Phaser.Canvas.create(width, height, '', true);
-
+    
     /**
     * @property {CanvasRenderingContext2D} context - The 2d context of the canvas.
     * @default
@@ -82,13 +82,13 @@ Phaser.BitmapData = function (game, key, width, height) {
     * @default
     */
     this.baseTexture = new PIXI.BaseTexture(this.canvas);
-
+    
     /**
     * @property {PIXI.Texture} texture - The PIXI.Texture.
     * @default
     */
     this.texture = new PIXI.Texture(this.baseTexture);
-
+    
     /**
     * @property {Phaser.Frame} textureFrame - The Frame this BitmapData uses for rendering.
     * @default
@@ -101,18 +101,15 @@ Phaser.BitmapData = function (game, key, width, height) {
     */
     this.type = Phaser.BITMAPDATA;
 
-    /**
-    * @property {boolean} dirty - If dirty this BitmapData will be re-rendered.
-    */
-    this.dirty = false;
+    this._dirty = false;
 
-};
+}
 
 Phaser.BitmapData.prototype = {
 
     /**
     * Updates the given objects so that they use this BitmapData as their texture. This will replace any texture they will currently have set.
-    *
+    * 
     * @method Phaser.BitmapData#add
     * @param {Phaser.Sprite|Phaser.Sprite[]|Phaser.Image|Phaser.Image[]} object - Either a single Sprite/Image or an Array of Sprites/Images.
     */
@@ -142,8 +139,8 @@ Phaser.BitmapData.prototype = {
     clear: function () {
 
         this.context.clearRect(0, 0, this.width, this.height);
-
-        this.dirty = true;
+    
+        this._dirty = true;
 
     },
 
@@ -163,8 +160,8 @@ Phaser.BitmapData.prototype = {
             this.textureFrame.height = height;
             this.imageData = this.context.getImageData(0, 0, width, height);
         }
-
-        this.dirty = true;
+    
+        this._dirty = true;
 
     },
 
@@ -212,7 +209,7 @@ Phaser.BitmapData.prototype = {
 
             this.context.putImageData(this.imageData, 0, 0);
 
-            this.dirty = true;
+            this._dirty = true;
         }
 
     },
@@ -364,13 +361,16 @@ Phaser.BitmapData.prototype = {
     */
     render: function () {
 
-        if (this.game.renderType === Phaser.WEBGL && this.dirty)
+        if (this._dirty)
         {
             //  Only needed if running in WebGL, otherwise this array will never get cleared down
-            //  should use the rendersession
-            PIXI.updateWebGLTexture(this.baseTexture, this.game.renderer.gl);
+            if (this.game.renderType === Phaser.WEBGL)
+            {
+                //  should use the rendersession
+                PIXI.updateWebGLTexture(this.baseTexture, this.game.renderer.gl);
+            }
 
-            this.dirty = false;
+            this._dirty = false;
         }
 
     }

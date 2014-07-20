@@ -4,7 +4,6 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-contrib-concat');
     grunt.loadNpmTasks('grunt-contrib-connect');
     grunt.loadNpmTasks('grunt-contrib-copy');
-    grunt.loadNpmTasks('grunt-contrib-jshint');
     grunt.loadNpmTasks('grunt-contrib-uglify');
     grunt.loadNpmTasks('grunt-text-replace');
     grunt.loadTasks('./tasks');
@@ -208,11 +207,11 @@ module.exports = function (grunt) {
             'src/physics/p2/Material.js',
             'src/physics/p2/ContactMaterial.js',
             'src/physics/p2/CollisionGroup.js',
-            'src/physics/p2/DistanceConstraint.js',
-            'src/physics/p2/GearConstraint.js',
-            'src/physics/p2/LockConstraint.js',
-            'src/physics/p2/PrismaticConstraint.js',
-            'src/physics/p2/RevoluteConstraint.js'
+            '/src/physics/p2/DistanceConstraint.js',
+            '/src/physics/p2/GearConstraint.js',
+            '/src/physics/p2/LockConstraint.js',
+            '/src/physics/p2/PrismaticConstraint.js',
+            '/src/physics/p2/RevoluteConstraint.js'
         ],
 
         ninja: [
@@ -277,15 +276,6 @@ module.exports = function (grunt) {
                 dest: '<%= compile_dir %>/phaser-no-libs.js'
             },
 
-            //  Phaser with pixi but no physics libs
-            phaserNoPhysics: {
-                options: {
-                    banner: '<%= banner %>'
-                },
-                src: ['<%= compile_dir %>/pixi.js', '<%= compile_dir %>/phaser-no-libs.js'],
-                dest: '<%= compile_dir %>/phaser-no-physics.js'
-            },
-
             //  One ring to rule them all
             standalone: {
                 options: {
@@ -331,14 +321,6 @@ module.exports = function (grunt) {
                 dest: '<%= compile_dir %>/phaser-no-libs.min.js'
             },
 
-            phaserNoPhysics: {
-                options: {
-                    banner: '/* Phaser (no physics) v<%= pkg.version %> - http://phaser.io - @photonstorm - (c) 2014 Photon Storm Ltd. */\n'
-                },
-                src: ['<%= concat.phaserNoPhysics.dest %>'],
-                dest: '<%= compile_dir %>/phaser-no-physics.min.js'
-            },
-
             standalone: {
                 options: {
                     sourceMap: true,
@@ -365,11 +347,19 @@ module.exports = function (grunt) {
                     { src: ['dist/pixi.js'], dest: 'build/custom/pixi.js' },
                     { src: ['dist/pixi.min.js'], dest: 'build/custom/pixi.min.js' },
                     { src: ['dist/ninja.js'], dest: 'build/custom/ninja.js' },
-                    { src: ['dist/ninja.min.js'], dest: 'build/custom/ninja.min.js' },
-                    { src: ['dist/phaser-no-physics.js'], dest: 'build/custom/phaser-no-physics.js' },
-                    { src: ['dist/phaser-no-physics.min.js'], dest: 'build/custom/phaser-no-physics.min.js' }
-
+                    { src: ['dist/ninja.min.js'], dest: 'build/custom/ninja.min.js' }
                 ]
+            }
+        },
+
+        examples: {
+            all: {
+            options: {
+                base: 'examples',
+                excludes: ['_site', 'assets', 'states', 'wip']
+            },
+            src: ['examples/**/*.js'],
+            dest: 'examples/_site/examples.json'
             }
         },
 
@@ -380,44 +370,12 @@ module.exports = function (grunt) {
                     hostname: '*'
                 }
             }
-        },
-
-        jshint: {
-            src: {
-                src: [
-                    'plugins/**/*.js',
-                    'src/**/*.js',
-                    '!src/Intro.js',
-                    '!src/Outro.js',
-                    '!src/pixi/**/*',
-                    '!src/physics/p2/p2.js',
-                    '!plugins/AStar.js'
-                ],
-                options: { jshintrc: '.jshintrc' }
-            },
-
-            filters: {
-                src: ['filters/**/*.js'],
-                options: { jshintrc: 'filters/.jshintrc', }
-            },
-
-            tooling: {
-                src: [
-                    'Gruntfile.js',
-                    'tasks/**/*.js'
-                ],
-                options: { jshintrc: 'tasks/.jshintrc' }
-            },
-
-            options: {
-                force: true
-            }
         }
+
     });
 
-    grunt.registerTask('default', ['build']);
-
-    grunt.registerTask('build', ['clean', 'jshint', 'concat', 'uglify']);
-    grunt.registerTask('dist', ['build', 'copy']);
+    grunt.registerTask('default', ['build', 'examples']);
+    grunt.registerTask('build', ['clean', 'concat', 'uglify']);
+    grunt.registerTask('dist', ['clean', 'concat', 'uglify', 'copy']);
 
 };

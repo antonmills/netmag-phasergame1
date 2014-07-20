@@ -18,6 +18,13 @@ Phaser.Device = function (game) {
     */
     this.game = game;
 
+    /**
+    * An optional 'fix' for the horrendous Android stock browser bug https://code.google.com/p/android/issues/detail?id=39247
+    * @property {boolean} patchAndroidClearRectBug - Description.
+    * @default
+    */
+    this.patchAndroidClearRectBug = false;
+
     //  Operating System
 
     /**
@@ -136,7 +143,7 @@ Phaser.Device = function (game) {
     */
     this.css3D = false;
 
-    /**
+    /** 
     * @property {boolean} pointerLock - Is Pointer Lock available?
     * @default
     */
@@ -153,12 +160,6 @@ Phaser.Device = function (game) {
     * @default
     */
     this.vibration = false;
-
-    /**
-    * @property {boolean} getUserMedia - Does the device support the getUserMedia API?
-    * @default
-    */
-    this.getUserMedia = false;
 
     /**
     * @property {boolean} quirksMode - Is the browser running in strict mode (false) or quirks mode? (true)
@@ -317,7 +318,7 @@ Phaser.Device = function (game) {
     */
     this.iPhone4 = false;
 
-    /**
+    /** 
     * @property {boolean} iPad - Is running on iPad?
     * @default
     */
@@ -366,7 +367,7 @@ Phaser.Device = function (game) {
     this._checkDevice();
     this._checkFeatures();
     this._checkOS();
-
+    
 };
 
 Phaser.Device.prototype = {
@@ -452,7 +453,7 @@ Phaser.Device.prototype = {
         }
 
         this.worker = !!window['Worker'];
-
+        
         if ('ontouchstart' in document.documentElement || (window.navigator.maxTouchPoints && window.navigator.maxTouchPoints > 1))
         {
             this.touch = true;
@@ -462,12 +463,12 @@ Phaser.Device.prototype = {
         {
             this.mspointer = true;
         }
-
+        
         this.pointerLock = 'pointerLockElement' in document || 'mozPointerLockElement' in document || 'webkitPointerLockElement' in document;
 
         this.quirksMode = (document.compatMode === 'CSS1Compat') ? false : true;
 
-        this.getUserMedia = !!(navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia);
+
 
     },
 
@@ -578,12 +579,12 @@ Phaser.Device.prototype = {
         {
             this.silk = true;
         }
-        else if (/Trident\/(\d+\.\d+)(.*)rv:(\d+\.\d+)/.test(ua))
+        else if (/Trident\/(\d+\.\d+); rv:(\d+\.\d+)/.test(ua))
         {
             this.ie = true;
             this.trident = true;
             this.tridentVersion = parseInt(RegExp.$1, 10);
-            this.ieVersion = parseInt(RegExp.$3, 10);
+            this.ieVersion = parseInt(RegExp.$2, 10);
         }
 
         // WebApp mode in iOS
@@ -618,7 +619,7 @@ Phaser.Device.prototype = {
 
         try {
             if (result = !!audioElement.canPlayType) {
-
+                
                 if (audioElement.canPlayType('audio/ogg; codecs="vorbis"').replace(/^no$/, '')) {
                     this.ogg = true;
                 }
@@ -675,7 +676,7 @@ Phaser.Device.prototype = {
         }
 
         navigator.vibrate = navigator.vibrate || navigator.webkitVibrate || navigator.mozVibrate || navigator.msVibrate;
-
+         
         if (navigator.vibrate)
         {
             this.vibration = true;
@@ -711,7 +712,7 @@ Phaser.Device.prototype = {
                 has3d = window.getComputedStyle(el).getPropertyValue(transforms[t]);
             }
         }
-
+        
         document.body.removeChild(el);
         this.css3D = (has3d !== undefined && has3d.length > 0 && has3d !== "none");
 
@@ -752,9 +753,6 @@ Phaser.Device.prototype = {
 
     /**
     * Check whether the console is open.
-    * Note that this only works in Firefox with Firebug and earlier versions of Chrome.
-    * It used to work in Chrome, but then they removed the ability: http://src.chromium.org/viewvc/blink?view=revision&revision=151136
-    * 
     * @method Phaser.Device#isConsoleOpen
     * @return {boolean} True if the browser dev console is open.
     */
@@ -775,10 +773,7 @@ Phaser.Device.prototype = {
                 console.clear();
             }
 
-            if (console['profiles'])
-            {
-                return console['profiles'].length > 0;
-            }
+            return console['profiles'].length > 0;
         }
 
         return false;

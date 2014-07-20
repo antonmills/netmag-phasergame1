@@ -3,11 +3,11 @@
   function Play() {}
   Play.prototype = {
     create: function() {
-      // sets the world bounds (to allow for the floor)
-      this.game.world.bounds = new Phaser.Rectangle(0, 0, 900, 423);
-
       // background
       this.bg = this.game.add.sprite(0, 0, 'background');
+
+      // sets the world bounds (to allow for the floor we only use 423 height)
+      this.game.world.bounds = new Phaser.Rectangle(0, 0, 900, 423);
 
       // set the game physics
       this.game.physics.startSystem(Phaser.Physics.ARCADE);
@@ -17,18 +17,17 @@
       this.player = this.game.add.sprite(this.game.width / 2, this.game.height / 2, 'player');
       this.game.physics.arcade.enable(this.player);
       this.player.body.collideWorldBounds = true;
-      this.player.anchor.set(0.5, 0.5);
+      this.player.anchor.set(0.5, 0);
       this.player.jump_timer = this.game.time.now + 1050;
 
       // create enemy pool
       this.enemy = [];
       for(var i = 0; i < 60; i++) {
-        var enemy = this.enemy[i] = this.game.add.sprite(0, 0, 'creature_' + this.game.rnd.integerInRange(1, 3));
+        var enemy = this.enemy[i] = this.game.add.sprite(100, 400, 'creature_' + this.game.rnd.integerInRange(1, 3));
         this.game.physics.arcade.enable(enemy);
         enemy.jump_timer = 0;
         enemy.jump_height = 110 + (Math.random() * 260);
         enemy.body.collideWorldBounds = true; 
-        enemy.id = i;
         enemy.visible = false;
       }
 
@@ -44,15 +43,15 @@
         font: "26px Arial",
         fill: "#ffffff",
         align: "left"
-    });;
+    });
 
       // game time
-      this.game_time = 2750;
+      this.game_time = 750;
       this.game_time_text = this.game.add.text(this.game.width - 122, 20, "Time: 60", {
         font: "26px Arial",
         fill: "#ffffff",
         align: "left"
-    });;
+    });
     },
 
     update: function() {
@@ -149,16 +148,17 @@
     // reset an enemy to a starting position (left or right)
     reset_enemy: function() {
       var enemy = this.enemy[this.current_enemy];
-      var left_or_right = Math.round(Math.random());
+      enemy.y = 300;
+
+      // appear left or right
+      var left_or_right = this.game.rnd.integerInRange(0, 1);
       if(left_or_right == 0) {
-        enemy.x = 30;
+        enemy.body.x = 30;
         enemy.direction = "right";
       } else {
-        enemy.x = this.game.width - 70;
+        enemy.body.x = this.game.width - 70;
         enemy.direction = "left";
       }
-
-      enemy.y = 360;
       
       // iterate over the object pool - reusing enemies where possible
       this.current_enemy++;

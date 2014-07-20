@@ -86,12 +86,6 @@ Phaser.Timer = function (game, autoDestroy) {
     this._pauseStarted = 0;
 
     /**
-    * @property {number} _pauseTotal - Total paused time.
-    * @private
-    */
-    this._pauseTotal = 0;
-
-    /**
     * @property {number} _now - The current start-time adjusted time.
     * @private
     */
@@ -153,13 +147,16 @@ Phaser.Timer.prototype = {
 
         var tick = delay;
 
-        if (this._now === 0)
+        if (this.running)
         {
-            tick += this.game.time.now;
-        }
-        else
-        {
-            tick += this._now;
+            if (this._now === 0)
+            {
+                tick += this.game.time.now;
+            }
+            else
+            {
+                tick += this._now;
+            }
         }
 
         var event = new Phaser.TimerEvent(this, delay, tick, repeatCount, loop, callback, callbackContext, args);
@@ -234,19 +231,8 @@ Phaser.Timer.prototype = {
     */
     start: function () {
 
-        if (this.running)
-        {
-            return;
-        }
-
         this._started = this.game.time.now;
-
         this.running = true;
-
-        for (var i = 0; i < this.events.length; i++)
-        {
-            this.events[i].tick = this.events[i].delay + this._started;
-        }
 
     },
 
@@ -427,7 +413,7 @@ Phaser.Timer.prototype = {
     * @method Phaser.Timer#pause
     */
     pause: function () {
-
+        
         if (this.running && !this.expired)
         {
             this._pauseStarted = this.game.time.now;
@@ -444,7 +430,7 @@ Phaser.Timer.prototype = {
     * @private
     */
     _pause: function () {
-
+        
         if (this.running && !this.expired)
         {
             this._pauseStarted = this.game.time.now;
@@ -463,8 +449,6 @@ Phaser.Timer.prototype = {
         if (this.running && !this.expired)
         {
             var pauseDuration = this.game.time.now - this._pauseStarted;
-
-            this._pauseTotal += pauseDuration;
 
             for (var i = 0; i < this.events.length; i++)
             {
@@ -498,24 +482,7 @@ Phaser.Timer.prototype = {
     },
 
     /**
-    * Removes all Events from this Timer and all callbacks linked to onComplete, but leaves the Timer running.
-    * The onComplete callbacks won't be called.
-    *
-    * @method Phaser.Timer#removeAll
-    */
-    removeAll: function () {
-
-        this.onComplete.removeAll();
-        this.events.length = 0;
-        this._len = 0;
-        this._i = 0;
-
-    },
-
-    /**
     * Destroys this Timer. Any pending Events are not dispatched.
-    * The onComplete callbacks won't be called.
-    *
     * @method Phaser.Timer#destroy
     */
     destroy: function () {
@@ -523,8 +490,7 @@ Phaser.Timer.prototype = {
         this.onComplete.removeAll();
         this.running = false;
         this.events = [];
-        this._len = 0;
-        this._i = 0;
+        this._i = this._len;
 
     }
 
@@ -551,7 +517,7 @@ Object.defineProperty(Phaser.Timer.prototype, "next", {
 Object.defineProperty(Phaser.Timer.prototype, "duration", {
 
     get: function () {
-
+        
         if (this.running && this.nextTick > this._now)
         {
             return this.nextTick - this._now;
@@ -586,7 +552,7 @@ Object.defineProperty(Phaser.Timer.prototype, "length", {
 Object.defineProperty(Phaser.Timer.prototype, "ms", {
 
     get: function () {
-        return this._now - this._started - this._pauseTotal;
+        return this._now - this._started;
     }
 
 });

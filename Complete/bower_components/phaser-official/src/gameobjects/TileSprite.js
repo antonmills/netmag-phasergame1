@@ -99,32 +99,13 @@ Phaser.TileSprite = function (game, x, y, width, height, key, frame) {
     this.world = new Phaser.Point(x, y);
 
     /**
-    * Should this Sprite be automatically culled if out of range of the camera?
-    * A culled sprite has its renderable property set to 'false'.
-    * Be advised this is quite an expensive operation, as it has to calculate the bounds of the object every frame, so only enable it if you really need it.
-    *
-    * @property {boolean} autoCull - A flag indicating if the Sprite should be automatically camera culled or not.
-    * @default
-    */
-    this.autoCull = false;
-
-    /**
-    * If true the Sprite checks if it is still within the world each frame, when it leaves the world it dispatches Sprite.events.onOutOfBounds
-    * and optionally kills the sprite (if Sprite.outOfBoundsKill is true). By default this is disabled because the Sprite has to calculate its
-    * bounds every frame to support it, and not all games need it. Enable it by setting the value to true.
-    * @property {boolean} checkWorldBounds
-    * @default
-    */
-    this.checkWorldBounds = false;
-
-    /**
     * @property {Phaser.Point} cameraOffset - If this object is fixedToCamera then this stores the x/y offset that its drawn at, from the top-left of the camera view.
     */
     this.cameraOffset = new Phaser.Point();
 
     /**
     * By default Sprites won't add themselves to any physics system and their physics body will be `null`.
-    * To enable them for physics you need to call `game.physics.enable(sprite, system)` where `sprite` is this object
+    * To enable them for physics you need to call `game.physics.enable(sprite, system)` where `sprite` is this object 
     * and `system` is the Physics system you want to use to manage this body. Once enabled you can access all physics related properties via `Sprite.body`.
     *
     * Important: Enabling a Sprite for P2 or Ninja physics will automatically set `Sprite.anchor` to 0.5 so the physics body is centered on the Sprite.
@@ -145,10 +126,10 @@ Phaser.TileSprite = function (game, x, y, width, height, key, frame) {
     * 5 = outOfBoundsFired (0 = no, 1 = yes)
     * 6 = exists (0 = no, 1 = yes)
     * 7 = fixed to camera (0 = no, 1 = yes)
-    * @property {Array} _cache
+    * @property {Int16Array} _cache
     * @private
     */
-    this._cache = [ 0, 0, 0, 0, 1, 0, 1, 0 ];
+    this._cache = new Int16Array([0, 0, 0, 0, 1, 0, 1, 0]);
 
 };
 
@@ -163,70 +144,7 @@ Phaser.TileSprite.prototype.constructor = Phaser.TileSprite;
 */
 Phaser.TileSprite.prototype.preUpdate = function() {
 
-    if (this._cache[4] === 1 && this.exists)
-    {
-        this.world.setTo(this.parent.position.x + this.position.x, this.parent.position.y + this.position.y);
-        this.worldTransform.tx = this.world.x;
-        this.worldTransform.ty = this.world.y;
-        this._cache[0] = this.world.x;
-        this._cache[1] = this.world.y;
-        this._cache[2] = this.rotation;
-
-        if (this.body)
-        {
-            this.body.preUpdate();
-        }
-
-        this._cache[4] = 0;
-
-        return false;
-    }
-
-    this._cache[0] = this.world.x;
-    this._cache[1] = this.world.y;
-    this._cache[2] = this.rotation;
-
-    if (!this.exists || !this.parent.exists)
-    {
-        //  Reset the renderOrderID
-        this._cache[3] = -1;
-        return false;
-    }
-
-    //  Cache the bounds if we need it
-    if (this.autoCull || this.checkWorldBounds)
-    {
-        this._bounds.copyFrom(this.getBounds());
-    }
-
-    if (this.autoCull)
-    {
-        //  Won't get rendered but will still get its transform updated
-        this.renderable = this.game.world.camera.screenView.intersects(this._bounds);
-    }
-
-    if (this.checkWorldBounds)
-    {
-        //  The Sprite is already out of the world bounds, so let's check to see if it has come back again
-        if (this._cache[5] === 1 && this.game.world.bounds.intersects(this._bounds))
-        {
-            this._cache[5] = 0;
-            this.events.onEnterBounds.dispatch(this);
-        }
-        else if (this._cache[5] === 0 && !this.game.world.bounds.intersects(this._bounds))
-        {
-            //  The Sprite WAS in the screen, but has now left.
-            this._cache[5] = 1;
-            this.events.onOutOfBounds.dispatch(this);
-        }
-    }
-
-    this.world.setTo(this.game.camera.x + this.worldTransform.tx, this.game.camera.y + this.worldTransform.ty);
-
-    if (this.visible)
-    {
-        this._cache[3] = this.game.stage.currentRenderOrderID++;
-    }
+    this.world.setTo(this.game.camera.x + this.worldTransform[2], this.game.camera.y + this.worldTransform[5]);
 
     this.animations.update();
 
@@ -240,7 +158,12 @@ Phaser.TileSprite.prototype.preUpdate = function() {
         this.tilePosition.y += this._scroll.y * this.game.time.physicsElapsed;
     }
 
-    if (this.body)
+    if (this.visible)
+    {
+        this._cache[3] = this.game.stage.currentRenderOrderID++;
+    }
+
+    if (this.exists && this.body)
     {
         this.body.preUpdate();
     }
@@ -253,7 +176,7 @@ Phaser.TileSprite.prototype.preUpdate = function() {
 
     return true;
 
-};
+}
 
 /**
 * Override and use this function in your own custom objects to handle any update requirements you may have.
@@ -263,7 +186,7 @@ Phaser.TileSprite.prototype.preUpdate = function() {
 */
 Phaser.TileSprite.prototype.update = function() {
 
-};
+}
 
 /**
 * Internal function called by the World postUpdate cycle.
@@ -291,7 +214,7 @@ Phaser.TileSprite.prototype.postUpdate = function() {
         this.children[i].postUpdate();
     }
 
-};
+}
 
 /**
 * Sets this TileSprite to automatically scroll in the given direction until stopped via TileSprite.stopScroll().
@@ -306,7 +229,7 @@ Phaser.TileSprite.prototype.autoScroll = function(x, y) {
 
     this._scroll.set(x, y);
 
-};
+}
 
 /**
 * Stops an automatically scrolling TileSprite.
@@ -318,7 +241,7 @@ Phaser.TileSprite.prototype.stopScroll = function() {
 
     this._scroll.set(0, 0);
 
-};
+}
 
 /**
 * Changes the Texture the TileSprite is using entirely. The old texture is removed and the new one is referenced or fetched from the Cache.
@@ -341,7 +264,7 @@ Phaser.TileSprite.prototype.loadTexture = function (key, frame) {
     }
     else if (key instanceof Phaser.BitmapData)
     {
-        this.key = key;
+        this.key = key.key;
         this.setTexture(key.texture);
         return;
     }
@@ -390,12 +313,12 @@ Phaser.TileSprite.prototype.loadTexture = function (key, frame) {
         }
     }
 
-};
+}
 
 /**
 * Destroys the TileSprite. This removes it from its parent group, destroys the event and animation handlers if present
 * and nulls its reference to game, freeing it up for garbage collection.
-*
+* 
 * @method Phaser.TileSprite#destroy
 * @memberof Phaser.TileSprite
 * @param {boolean} [destroyChildren=true] - Should every child of this object have its destroy method called?
@@ -451,12 +374,12 @@ Phaser.TileSprite.prototype.destroy = function(destroyChildren) {
     this.mask = null;
     this.game = null;
 
-};
+}
 
 /**
 * Play an animation based on the given key. The animation should previously have been added via sprite.animations.add()
 * If the requested animation is already playing this request will be ignored. If you need to reset an already running animation do so directly on the Animation object itself.
-*
+* 
 * @method Phaser.TileSprite#play
 * @memberof Phaser.TileSprite
 * @param {string} name - The name of the animation to be played, e.g. "fire", "walk", "jump".
@@ -469,49 +392,13 @@ Phaser.TileSprite.prototype.play = function (name, frameRate, loop, killOnComple
 
     return this.animations.play(name, frameRate, loop, killOnComplete);
 
-};
-
-/**
-* Resets the TileSprite. This places the TileSprite at the given x/y world coordinates, resets the tilePosition and then
-* sets alive, exists, visible and renderable all to true. Also resets the outOfBounds state.
-* If the TileSprite has a physics body that too is reset.
-* 
-* @method Phaser.TileSprite#reset
-* @memberof Phaser.TileSprite
-* @param {number} x - The x coordinate (in world space) to position the Sprite at.
-* @param {number} y - The y coordinate (in world space) to position the Sprite at.
-* @return (Phaser.TileSprite) This instance.
-*/
-Phaser.TileSprite.prototype.reset = function(x, y) {
-
-    this.world.setTo(x, y);
-    this.position.x = x;
-    this.position.y = y;
-    this.alive = true;
-    this.exists = true;
-    this.visible = true;
-    this.renderable = true;
-    this._outOfBoundsFired = false;
-
-    this.tilePosition.x = 0;
-    this.tilePosition.y = 0;
-
-    if (this.body)
-    {
-        this.body.reset(x, y, false, false);
-    }
-
-    this._cache[4] = 1;
-
-    return this;
-    
-};
+}
 
 /**
 * Indicates the rotation of the Sprite, in degrees, from its original orientation. Values from 0 to 180 represent clockwise rotation; values from 0 to -180 represent counterclockwise rotation.
 * Values outside this range are added to or subtracted from 360 to obtain a value within the range. For example, the statement player.angle = 450 is the same as player.angle = 90.
 * If you wish to work in radians instead of degrees use the property Sprite.rotation instead. Working in radians is also a little faster as it doesn't have to convert the angle.
-*
+* 
 * @name Phaser.TileSprite#angle
 * @property {number} angle - The angle of this Sprite in degrees.
 */
@@ -582,7 +469,7 @@ Object.defineProperty(Phaser.TileSprite.prototype, "frameName", {
 * @property {boolean} fixedToCamera - Set to true to fix this TileSprite to the Camera at its current world coordinates.
 */
 Object.defineProperty(Phaser.TileSprite.prototype, "fixedToCamera", {
-
+    
     get: function () {
 
         return !!this._cache[7];
@@ -613,7 +500,7 @@ Object.defineProperty(Phaser.TileSprite.prototype, "fixedToCamera", {
 * @property {boolean} exists - If the TileSprite is processed by the core game update and physics.
 */
 Object.defineProperty(Phaser.TileSprite.prototype, "exists", {
-
+    
     get: function () {
 
         return !!this._cache[6];
@@ -659,7 +546,7 @@ Object.defineProperty(Phaser.TileSprite.prototype, "exists", {
 * @property {boolean} inputEnabled - Set to true to allow this object to receive input events.
 */
 Object.defineProperty(Phaser.TileSprite.prototype, "inputEnabled", {
-
+    
     get: function () {
 
         return (this.input && this.input.enabled);
@@ -683,60 +570,6 @@ Object.defineProperty(Phaser.TileSprite.prototype, "inputEnabled", {
                 this.input.stop();
             }
         }
-    }
-
-});
-
-/**
-* The position of the TileSprite on the x axis relative to the local coordinates of the parent.
-*
-* @name Phaser.TileSprite#x
-* @property {number} x - The position of the TileSprite on the x axis relative to the local coordinates of the parent.
-*/
-Object.defineProperty(Phaser.TileSprite.prototype, "x", {
-
-    get: function () {
-
-        return this.position.x;
-
-    },
-
-    set: function (value) {
-
-        this.position.x = value;
-
-        if (this.body && this.body.type === Phaser.Physics.ARCADE && this.body.phase === 2)
-        {
-            this.body._reset = 1;
-        }
-
-    }
-
-});
-
-/**
-* The position of the TileSprite on the y axis relative to the local coordinates of the parent.
-*
-* @name Phaser.TileSprite#y
-* @property {number} y - The position of the TileSprite on the y axis relative to the local coordinates of the parent.
-*/
-Object.defineProperty(Phaser.TileSprite.prototype, "y", {
-
-    get: function () {
-
-        return this.position.y;
-
-    },
-
-    set: function (value) {
-
-        this.position.y = value;
-
-        if (this.body && this.body.type === Phaser.Physics.ARCADE && this.body.phase === 2)
-        {
-            this.body._reset = 1;
-        }
-
     }
 
 });

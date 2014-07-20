@@ -164,14 +164,7 @@ Phaser.Gamepad.prototype = {
     */
     start: function () {
 
-        if (this._active)
-        {
-            //  Avoid setting multiple listeners
-            return;
-        }
-
         this._active = true;
-
         var _this = this;
 
         this._ongamepadconnected = function(event) {
@@ -227,7 +220,7 @@ Phaser.Gamepad.prototype = {
     */
     _pollGamepads: function () {
 
-        var rawGamepads = navigator.getGamepads || (navigator.webkitGetGamepads && navigator.webkitGetGamepads()) || navigator.webkitGamepads;
+        var rawGamepads = (navigator.webkitGetGamepads && navigator.webkitGetGamepads()) || navigator.webkitGamepads || navigator.getGamepads;
 
         if (rawGamepads)
         {
@@ -299,7 +292,7 @@ Phaser.Gamepad.prototype = {
                         }
 
                         var rawPad = this._rawPads[m];
-
+                        
                         if (rawPad)
                         {
                             if (validConnections.rawIndices[rawPad.index])

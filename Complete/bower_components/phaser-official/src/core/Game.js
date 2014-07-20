@@ -313,7 +313,7 @@ Phaser.Game = function (width, height, renderer, parent, state, transparent, ant
 
     this._onBoot = function () {
         return _this.boot();
-    };
+    }
 
     if (document.readyState === 'complete' || document.readyState === 'interactive')
     {
@@ -377,14 +377,10 @@ Phaser.Game.prototype = {
             this.physicsConfig = config['physicsConfig'];
         }
 
-        var seed = [(Date.now() * Math.random()).toString()];
-
         if (config['seed'])
         {
-            seed = config['seed'];
+            this.rnd = new Phaser.RandomDataGenerator(config['seed']);
         }
-
-        this.rnd = new Phaser.RandomDataGenerator(seed);
 
         var state = null;
 

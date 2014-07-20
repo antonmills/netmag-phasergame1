@@ -169,7 +169,7 @@ Phaser.Pointer = function (game, id) {
     * @property {Phaser.Point} position - A Phaser.Point object containing the current x/y values of the pointer on the display.
     */
     this.position = new Phaser.Point();
-
+    
     /**
     * @property {Phaser.Point} positionDown - A Phaser.Point object containing the x/y values of the pointer when it was last in a down state on the display.
     */
@@ -276,7 +276,7 @@ Phaser.Pointer.prototype = {
                     x: this.position.x,
                     y: this.position.y
                 });
-
+            
                 if (this._history.length > this.game.input.recordLimit)
                 {
                     this._history.shift();
@@ -367,7 +367,7 @@ Phaser.Pointer.prototype = {
             do
             {
                 //  If the object is using pixelPerfect checks, or has a higher InputManager.PriorityID OR if the priority ID is the same as the current highest AND it has a higher renderOrderID, then set it to the top
-                if (currentNode.validForInput(this._highestInputPriorityID, this._highestRenderOrderID))
+                if (currentNode.pixelPerfectClick || currentNode.pixelPerfectOver || currentNode.priorityID > this._highestInputPriorityID || (currentNode.priorityID === this._highestInputPriorityID && currentNode.sprite._cache[3] < this._highestRenderOrderID))
                 {
                     if ((!fromClick && currentNode.checkPointerOver(this)) || (fromClick && currentNode.checkPointerDown(this)))
                     {
@@ -378,7 +378,7 @@ Phaser.Pointer.prototype = {
                 }
                 currentNode = currentNode.next;
             }
-            while (currentNode != null);
+            while (currentNode != null)
         }
 
         if (this._highestRenderObject === null)
@@ -498,17 +498,17 @@ Phaser.Pointer.prototype = {
         if (this.game.input.interactiveItems.total > 0)
         {
             var currentNode = this.game.input.interactiveItems.next;
-
+            
             do
             {
                 if (currentNode)
                 {
                     currentNode._releasedHandler(this);
                 }
-
+                
                 currentNode = currentNode.next;
             }
-            while (currentNode != null);
+            while (currentNode != null)
         }
 
         if (this.targetObject)

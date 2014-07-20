@@ -2,6 +2,6 @@
   "name": "netmag-phaser",
   "version": "0.0.0",
   "dependencies": {
-    "phaser-official": "2.0.2"
+    "phaser-official": "2.0.0"
   }
 }

@@ -12,7 +12,6 @@ Preload.prototype = {
 
     this.load.onLoadComplete.addOnce(this.onLoadComplete, this);
     this.load.setPreloadSprite(this.asset);
-    
     this.load.image('menu', 'assets/menu.jpg');
     this.load.image('background', 'assets/background.jpg');
     this.load.image('player', 'assets/player.png');
@@ -20,6 +19,7 @@ Preload.prototype = {
     this.load.image('creature_2', 'assets/creature_2.png');
     this.load.image('creature_3', 'assets/creature_3.png');
     this.load.image('gameover', 'assets/gameover.jpg');
+
   },
   create: function() {
     this.asset.cropEnabled = false;

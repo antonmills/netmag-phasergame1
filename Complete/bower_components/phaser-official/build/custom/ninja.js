@@ -11,14 +11,14 @@
 *
 * It does what it does very well, but is ripe for expansion and optimisation. Here are some features that I'd love to see the community add:
 *
-* * AABB to AABB collision
-* * AABB to Circle collision
-* * AABB and Circle 'immovable' property support
-* * n-way collision, so an AABB/Circle could pass through a tile from below and land upon it.
-* * QuadTree or spatial grid for faster Body vs. Tile Group look-ups.
-* * Optimise the internal vector math and reduce the quantity of temporary vars created.
-* * Expand Gravity and Bounce to allow for separate x/y axis values.
-* * Support Bodies linked to Sprites that don't have anchor set to 0.5
+* AABB to AABB collision
+* AABB to Circle collision
+* AABB and Circle 'immovable' property support
+* n-way collision, so an AABB/Circle could pass through a tile from below and land upon it.
+* QuadTree or spatial grid for faster Body vs. Tile Group look-ups.
+* Optimise the internal vector math and reduce the quantity of temporary vars created.
+* Expand Gravity and Bounce to allow for separate x/y axis values.
+* Support Bodies linked to Sprites that don't have anchor set to 0.5
 *
 * Feel free to attempt any of the above and submit a Pull Request with your code! Be sure to include test cases proving they work.
 *
@@ -28,7 +28,7 @@
 * @param {Phaser.Game} game reference to the current game instance.
 */
 Phaser.Physics.Ninja = function (game) {
-
+    
     /**
     * @property {Phaser.Game} game - Local reference to game.
     */
@@ -136,7 +136,7 @@ Phaser.Physics.Ninja.prototype = {
 
         if (Array.isArray(object))
         {
-            var i = object.length;
+            i = object.length;
 
             while (i--)
             {
@@ -263,6 +263,9 @@ Phaser.Physics.Ninja.prototype = {
     convertTilemap: function (map, layer, slopeMap) {
 
         layer = map.getLayer(layer);
+
+        if (typeof addToWorld === 'undefined') { addToWorld = true; }
+        if (typeof optimize === 'undefined') { optimize = true; }
 
         //  If the bodies array is already populated we need to nuke it
         this.clearTilemapLayerBodies(map, layer);
@@ -567,9 +570,11 @@ Phaser.Physics.Ninja.prototype = {
     * @method Phaser.Physics.Ninja#separate
     * @param {Phaser.Physics.Ninja.Body} body1 - The Body object to separate.
     * @param {Phaser.Physics.Ninja.Body} body2 - The Body object to separate.
+    * @param {function} [processCallback=null] - UN-USED: A callback function that lets you perform additional checks against the two objects if they overlap. If this function is set then the sprites will only be collided if it returns true.
+    * @param {object} [callbackContext] - UN-USED: The context in which to run the process callback.
     * @returns {boolean} Returns true if the bodies collided, otherwise false.
     */
-    separate: function (body1, body2) {
+    separate: function (body1, body2, processCallback, callbackContext, overlapOnly) {
 
         if (body1.type !== Phaser.Physics.NINJA || body2.type !== Phaser.Physics.NINJA)
         {
@@ -1024,23 +1029,8 @@ Phaser.Physics.Ninja.Body.prototype = {
     */
     deltaY: function () {
         return this.shape.pos.y - this.shape.oldpos.y;
-    },
-
-    /**
-    * Destroys this body's reference to the sprite and system, and destroys its shape.
-    *
-    * @method Phaser.Physics.Ninja.Body#destroy
-    */
-    destroy: function() {
-        this.sprite = null;
-        this.system = null;
-        this.aabb = null;
-        this.tile = null;
-        this.circle = null;
-
-        this.shape.destroy();
-        this.shape = null;
     }
+
 };
 
 /**
@@ -1048,7 +1038,7 @@ Phaser.Physics.Ninja.Body.prototype = {
 * @property {number} x - The x position.
 */
 Object.defineProperty(Phaser.Physics.Ninja.Body.prototype, "x", {
-
+    
     get: function () {
         return this.shape.pos.x;
     },
@@ -1064,7 +1054,7 @@ Object.defineProperty(Phaser.Physics.Ninja.Body.prototype, "x", {
 * @property {number} y - The y position.
 */
 Object.defineProperty(Phaser.Physics.Ninja.Body.prototype, "y", {
-
+    
     get: function () {
         return this.shape.pos.y;
     },
@@ -1081,7 +1071,7 @@ Object.defineProperty(Phaser.Physics.Ninja.Body.prototype, "y", {
 * @readonly
 */
 Object.defineProperty(Phaser.Physics.Ninja.Body.prototype, "width", {
-
+    
     get: function () {
         return this.shape.width;
     }
@@ -1094,7 +1084,7 @@ Object.defineProperty(Phaser.Physics.Ninja.Body.prototype, "width", {
 * @readonly
 */
 Object.defineProperty(Phaser.Physics.Ninja.Body.prototype, "height", {
-
+    
     get: function () {
         return this.shape.height;
     }
@@ -1107,7 +1097,7 @@ Object.defineProperty(Phaser.Physics.Ninja.Body.prototype, "height", {
 * @readonly
 */
 Object.defineProperty(Phaser.Physics.Ninja.Body.prototype, "bottom", {
-
+    
     get: function () {
         return this.shape.pos.y + this.shape.yw;
     }
@@ -1120,7 +1110,7 @@ Object.defineProperty(Phaser.Physics.Ninja.Body.prototype, "bottom", {
 * @readonly
 */
 Object.defineProperty(Phaser.Physics.Ninja.Body.prototype, "right", {
-
+    
     get: function () {
         return this.shape.pos.x + this.shape.xw;
     }
@@ -1133,7 +1123,7 @@ Object.defineProperty(Phaser.Physics.Ninja.Body.prototype, "right", {
 * @readonly
 */
 Object.defineProperty(Phaser.Physics.Ninja.Body.prototype, "speed", {
-
+    
     get: function () {
         return Math.sqrt(this.shape.velocity.x * this.shape.velocity.x + this.shape.velocity.y * this.shape.velocity.y);
     }
@@ -1146,7 +1136,7 @@ Object.defineProperty(Phaser.Physics.Ninja.Body.prototype, "speed", {
 * @readonly
 */
 Object.defineProperty(Phaser.Physics.Ninja.Body.prototype, "angle", {
-
+    
     get: function () {
         return Math.atan2(this.shape.velocity.y, this.shape.velocity.x);
     }
@@ -1154,7 +1144,6 @@ Object.defineProperty(Phaser.Physics.Ninja.Body.prototype, "angle", {
 });
 
 
-/* jshint camelcase: false */
 /**
 * @author       Richard Davey <rich@photonstorm.com>
 * @copyright    2014 Photon Storm Ltd.
@@ -1175,7 +1164,7 @@ Object.defineProperty(Phaser.Physics.Ninja.Body.prototype, "angle", {
 * @param {number} height - The height of this AABB.
 */
 Phaser.Physics.Ninja.AABB = function (body, x, y, width, height) {
-
+    
     /**
     * @property {Phaser.Physics.Ninja.Body} system - A reference to the body that owns this shape.
     */
@@ -1292,7 +1281,7 @@ Phaser.Physics.Ninja.AABB.prototype = {
     * @param {number} dy - Collision normal
     * @param {number} obj - Object this AABB collided with
     */
-    reportCollisionVsWorld: function (px, py, dx, dy) {
+    reportCollisionVsWorld: function (px, py, dx, dy, obj) {
 
         var p = this.pos;
         var o = this.oldpos;
@@ -1401,6 +1390,16 @@ Phaser.Physics.Ninja.AABB.prototype = {
         var vx1 = this.pos.x - this.oldpos.x;   //  Calc velocity of this object
         var vy1 = this.pos.y - this.oldpos.y;
         var dp1 = (vx1 * dx + vy1 * dy);         //  Find component of velocity parallel to collision normal
+        var nx1 = dp1 * dx;                      //  Project velocity onto collision normal
+        var ny1 = dp1 * dy;                      //  nx, ny is normal velocity
+
+        var dx2 = dx * -1;
+        var dy2 = dy * -1;
+        var vx2 = obj.pos.x - obj.oldpos.x;      //  Calc velocity of colliding object
+        var vy2 = obj.pos.y - obj.oldpos.y;
+        var dp2 = (vx2 * dx2 + vy2 * dy2);         //  Find component of velocity parallel to collision normal
+        var nx2 = dp2 * dx2;                      //  Project velocity onto collision normal
+        var ny2 = dp2 * dy2;                      //  nx, ny is normal velocity
 
         //  We only want to apply collision response forces if the object is travelling into, and not out of, the collision
         if (this.body.immovable && obj.body.immovable)
@@ -1468,7 +1467,7 @@ Phaser.Physics.Ninja.AABB.prototype = {
         }
         else
         {
-            dx = (this.pos.x + this.xw) - this.system.bounds.right;
+            dx = (this.pos.x + this.xw) - this.system.bounds.width;
 
             if (0 < dx)
             {
@@ -1484,7 +1483,7 @@ Phaser.Physics.Ninja.AABB.prototype = {
         }
         else
         {
-            dy = (this.pos.y + this.yw) - this.system.bounds.bottom;
+            dy = (this.pos.y + this.yw) - this.system.bounds.height;
 
             if (0 < dy)
             {
@@ -1681,16 +1680,16 @@ Phaser.Physics.Ninja.AABB.prototype = {
     projAABB_Half: function (x, y, obj, t) {
 
         //signx or signy must be 0; the other must be -1 or 1
-        //calculate the projection vector for the half-edge, and then
+        //calculate the projection vector for the half-edge, and then 
         //(if collision is occuring) pick the minimum
-
+        
         var sx = t.signx;
         var sy = t.signy;
-
+            
         var ox = (obj.pos.x - (sx*obj.xw)) - t.pos.x;//this gives is the coordinates of the innermost
         var oy = (obj.pos.y - (sy*obj.yw)) - t.pos.y;//point on the AABB, relative to the tile center
 
-        //we perform operations analogous to the 45deg tile, except we're using
+        //we perform operations analogous to the 45deg tile, except we're using 
         //an axis-aligned slope instead of an angled one..
 
         //if the dotprod of (ox,oy) and (sx,sy) is negative, the corner is in the slope
@@ -1701,11 +1700,11 @@ Phaser.Physics.Ninja.AABB.prototype = {
         {
             //collision; project delta onto slope and use this to displace the object
             sx *= -dp;//(sx,sy) is now the projection vector
-            sy *= -dp;
-
+            sy *= -dp;      
+                
             var lenN = Math.sqrt(sx*sx + sy*sy);
             var lenP = Math.sqrt(x*x + y*y);
-
+            
             if (lenP < lenN)
             {
                 //project along axis; note that we're assuming that this tile is horizontal OR vertical
@@ -1715,14 +1714,14 @@ Phaser.Physics.Ninja.AABB.prototype = {
                 return Phaser.Physics.Ninja.AABB.COL_AXIS;
             }
             else
-            {
+            {       
                 //note that we could use -= instead of -dp
                 obj.reportCollisionVsWorld(sx,sy,t.signx, t.signy, t);
-
+                    
                 return Phaser.Physics.Ninja.AABB.COL_OTHER;
             }
         }
-
+            
         return Phaser.Physics.Ninja.AABB.COL_NONE;
 
     },
@@ -1747,7 +1746,7 @@ Phaser.Physics.Ninja.AABB.prototype = {
 
         var sx = t.sx;
         var sy = t.sy;
-
+            
         //if the dotprod of (ox,oy) and (sx,sy) is negative, the corner is in the slope
         //and we need toproject it out by the magnitude of the projection of (ox,oy) onto (sx,sy)
         var dp = (ox*sx) + (oy*sy);
@@ -1756,8 +1755,8 @@ Phaser.Physics.Ninja.AABB.prototype = {
         {
             //collision; project delta onto slope and use this to displace the object
             sx *= -dp;//(sx,sy) is now the projection vector
-            sy *= -dp;
-
+            sy *= -dp;      
+            
             var lenN = Math.sqrt(sx*sx + sy*sy);
             var lenP = Math.sqrt(x*x + y*y);
 
@@ -1776,7 +1775,7 @@ Phaser.Physics.Ninja.AABB.prototype = {
                 return Phaser.Physics.Ninja.AABB.COL_OTHER;
             }
         }
-
+        
         return Phaser.Physics.Ninja.AABB.COL_NONE;
     },
 
@@ -1791,7 +1790,7 @@ Phaser.Physics.Ninja.AABB.prototype = {
     * @return {number} The result of the collision.
     */
     projAABB_22DegS: function (x, y, obj, t) {
-
+        
         var signx = t.signx;
         var signy = t.signy;
 
@@ -1804,10 +1803,10 @@ Phaser.Physics.Ninja.AABB.prototype = {
         {
             var ox = (obj.pos.x - (signx*obj.xw)) - (t.pos.x + (signx*t.xw));//this gives is the coordinates of the innermost
             var oy = (obj.pos.y - (signy*obj.yw)) - (t.pos.y - (signy*t.yw));//point on the AABB, relative to a point on the slope
-
+                                                        
             var sx = t.sx;//get slope unit normal
             var sy = t.sy;
-
+            
             //if the dotprod of (ox,oy) and (sx,sy) is negative, the corner is in the slope
             //and we need toproject it out by the magnitude of the projection of (ox,oy) onto (sx,sy)
             var dp = (ox*sx) + (oy*sy);
@@ -1816,11 +1815,11 @@ Phaser.Physics.Ninja.AABB.prototype = {
             {
                 //collision; project delta onto slope and use this to displace the object
                 sx *= -dp;//(sx,sy) is now the projection vector
-                sy *= -dp;
+                sy *= -dp;      
 
                 var lenN = Math.sqrt(sx*sx + sy*sy);
                 var lenP = Math.sqrt(x*x + y*y);
-
+                
                 var aY = Math.abs(penY);
 
                 if (lenP < lenN)
@@ -1828,13 +1827,13 @@ Phaser.Physics.Ninja.AABB.prototype = {
                     if (aY < lenP)
                     {
                         obj.reportCollisionVsWorld(0, penY, 0, penY/aY, t);
-
+                        
                         return Phaser.Physics.Ninja.AABB.COL_OTHER;
                     }
                     else
                     {
                         obj.reportCollisionVsWorld(x,y,x/lenP, y/lenP, t);
-
+                        
                         return Phaser.Physics.Ninja.AABB.COL_AXIS;
                     }
                 }
@@ -1843,7 +1842,7 @@ Phaser.Physics.Ninja.AABB.prototype = {
                     if (aY < lenN)
                     {
                         obj.reportCollisionVsWorld(0, penY, 0, penY/aY, t);
-
+                        
                         return Phaser.Physics.Ninja.AABB.COL_OTHER;
                     }
                     else
@@ -1855,7 +1854,7 @@ Phaser.Physics.Ninja.AABB.prototype = {
                 }
             }
         }
-
+        
         //if we've reached this point, no collision has occured
         return Phaser.Physics.Ninja.AABB.COL_NONE;
     },
@@ -1877,10 +1876,10 @@ Phaser.Physics.Ninja.AABB.prototype = {
 
         var ox = (obj.pos.x - (signx*obj.xw)) - (t.pos.x - (signx*t.xw));//this gives is the coordinates of the innermost
         var oy = (obj.pos.y - (signy*obj.yw)) - (t.pos.y + (signy*t.yw));//point on the AABB, relative to a point on the slope
-
+            
         var sx = t.sx;//get slope unit normal
         var sy = t.sy;
-
+            
         //if the dotprod of (ox,oy) and (sx,sy) is negative, the corner is in the slope
         //and we need toproject it out by the magnitude of the projection of (ox,oy) onto (sx,sy)
         var dp = (ox*sx) + (oy*sy);
@@ -1889,7 +1888,7 @@ Phaser.Physics.Ninja.AABB.prototype = {
         {
             //collision; project delta onto slope and use this to displace the object
             sx *= -dp;//(sx,sy) is now the projection vector
-            sy *= -dp;
+            sy *= -dp;      
 
             var lenN = Math.sqrt(sx*sx + sy*sy);
             var lenP = Math.sqrt(x*x + y*y);
@@ -1897,18 +1896,18 @@ Phaser.Physics.Ninja.AABB.prototype = {
             if (lenP < lenN)
             {
                 obj.reportCollisionVsWorld(x,y,x/lenP, y/lenP, t);
-
+                    
                 return Phaser.Physics.Ninja.AABB.COL_AXIS;
             }
             else
-            {
+            {       
                 obj.reportCollisionVsWorld(sx,sy,t.sx,t.sy,t);
-
+                                    
                 return Phaser.Physics.Ninja.AABB.COL_OTHER;
             }
-
+        
         }
-
+            
         return Phaser.Physics.Ninja.AABB.COL_NONE;
 
     },
@@ -1938,7 +1937,7 @@ Phaser.Physics.Ninja.AABB.prototype = {
 
             var sx = t.sx;//get slope unit normal
             var sy = t.sy;
-
+            
             //if the dotprod of (ox,oy) and (sx,sy) is negative, the corner is in the slope
             //and we need to project it out by the magnitude of the projection of (ox,oy) onto (sx,sy)
             var dp = (ox*sx) + (oy*sy);
@@ -1947,7 +1946,7 @@ Phaser.Physics.Ninja.AABB.prototype = {
             {
                 //collision; project delta onto slope and use this to displace the object
                 sx *= -dp;//(sx,sy) is now the projection vector
-                sy *= -dp;
+                sy *= -dp;      
 
                 var lenN = Math.sqrt(sx*sx + sy*sy);
                 var lenP = Math.sqrt(x*x + y*y);
@@ -1959,13 +1958,13 @@ Phaser.Physics.Ninja.AABB.prototype = {
                     if (aX < lenP)
                     {
                         obj.reportCollisionVsWorld(penX, 0, penX/aX, 0, t);
-
+                        
                         return Phaser.Physics.Ninja.AABB.COL_OTHER;
                     }
                     else
                     {
                         obj.reportCollisionVsWorld(x,y,x/lenP, y/lenP, t);
-
+                        
                         return Phaser.Physics.Ninja.AABB.COL_AXIS;
                     }
                 }
@@ -1974,11 +1973,11 @@ Phaser.Physics.Ninja.AABB.prototype = {
                     if (aX < lenN)
                     {
                         obj.reportCollisionVsWorld(penX, 0, penX/aX, 0, t);
-
+                        
                         return Phaser.Physics.Ninja.AABB.COL_OTHER;
                     }
                     else
-                    {
+                    {               
                         obj.reportCollisionVsWorld(sx,sy,t.sx,t.sy,t);
 
                         return Phaser.Physics.Ninja.AABB.COL_OTHER;
@@ -1986,9 +1985,9 @@ Phaser.Physics.Ninja.AABB.prototype = {
                 }
             }
         }
-
+        
         //if we've reached this point, no collision has occured
-        return Phaser.Physics.Ninja.AABB.COL_NONE;
+        return Phaser.Physics.Ninja.AABB.COL_NONE;    
 
     },
 
@@ -2006,13 +2005,13 @@ Phaser.Physics.Ninja.AABB.prototype = {
 
         var signx = t.signx;
         var signy = t.signy;
-
+            
         var ox = (obj.pos.x - (signx*obj.xw)) - (t.pos.x + (signx*t.xw));//this gives is the coordinates of the innermost
         var oy = (obj.pos.y - (signy*obj.yw)) - (t.pos.y - (signy*t.yw));//point on the AABB, relative to a point on the slope
-
+                                                        
         var sx = t.sx;//get slope unit normal
         var sy = t.sy;
-
+            
         //if the dotprod of (ox,oy) and (sx,sy) is negative, the corner is in the slope
         //and we need toproject it out by the magnitude of the projection of (ox,oy) onto (sx,sy)
         var dp = (ox*sx) + (oy*sy);
@@ -2021,11 +2020,11 @@ Phaser.Physics.Ninja.AABB.prototype = {
         {
             //collision; project delta onto slope and use this to displace the object
             sx *= -dp;//(sx,sy) is now the projection vector
-            sy *= -dp;
-
+            sy *= -dp;      
+                
             var lenN = Math.sqrt(sx*sx + sy*sy);
             var lenP = Math.sqrt(x*x + y*y);
-
+                
             if (lenP < lenN)
             {
                 obj.reportCollisionVsWorld(x,y,x/lenP, y/lenP, t);
@@ -2033,14 +2032,14 @@ Phaser.Physics.Ninja.AABB.prototype = {
                 return Phaser.Physics.Ninja.AABB.COL_AXIS;
             }
             else
-            {
+            {       
                 obj.reportCollisionVsWorld(sx,sy,t.sx,t.sy,t);
-
+                    
                 return Phaser.Physics.Ninja.AABB.COL_OTHER;
             }
         }
-
-        return Phaser.Physics.Ninja.AABB.COL_NONE;
+            
+        return Phaser.Physics.Ninja.AABB.COL_NONE;    
     },
 
     /**
@@ -2077,7 +2076,7 @@ Phaser.Physics.Ninja.AABB.prototype = {
             var lenP = Math.sqrt(x * x + y * y);
             obj.reportCollisionVsWorld(x, y, x / lenP, y / lenP, t);
 
-            return Phaser.Physics.Ninja.AABB.COL_AXIS;//we need to report
+            return Phaser.Physics.Ninja.AABB.COL_AXIS;//we need to report 		
         }
         else if (0 < pen)
         {
@@ -2148,22 +2147,11 @@ Phaser.Physics.Ninja.AABB.prototype = {
         }
 
         return Phaser.Physics.Ninja.AABB.COL_NONE;
-
-    },
-
-    /**
-    * Destroys this AABB's reference to Body and System
-    *
-    * @method Phaser.Physics.Ninja.AABB#destroy
-    */
-    destroy: function() {
-        this.body = null;
-        this.system = null;
+		
     }
 
-};
+}
 
-/* jshint camelcase: false */
 /**
 * @author       Richard Davey <rich@photonstorm.com>
 * @copyright    2014 Photon Storm Ltd.
@@ -2175,7 +2163,7 @@ Phaser.Physics.Ninja.AABB.prototype = {
 * A Tile is defined by its width, height and type. It's type can include slope data, such as 45 degree slopes, or convex slopes.
 * Understand that for any type including a slope (types 2 to 29) the Tile must be SQUARE, i.e. have an equal width and height.
 * Also note that as Tiles are primarily used for levels they have gravity disabled and world bounds collision disabled by default.
-*
+* 
 * Note: This class could be massively optimised and reduced in size. I leave that challenge up to you.
 *
 * @class Phaser.Physics.Ninja.Tile
@@ -2189,7 +2177,7 @@ Phaser.Physics.Ninja.AABB.prototype = {
 * @param {number} [type=1] - The type of Ninja shape to create. 1 = AABB, 2 = Circle or 3 = Tile.
 */
 Phaser.Physics.Ninja.Tile = function (body, x, y, width, height, type) {
-
+    
     if (typeof type === 'undefined') { type = Phaser.Physics.Ninja.Tile.EMPTY; }
 
     /**
@@ -2331,7 +2319,7 @@ Phaser.Physics.Ninja.Tile.prototype = {
         }
         else
         {
-            dx = (this.pos.x + this.xw) - this.system.bounds.right;
+            dx = (this.pos.x + this.xw) - this.system.bounds.width;
 
             if (0 < dx)
             {
@@ -2347,7 +2335,7 @@ Phaser.Physics.Ninja.Tile.prototype = {
         }
         else
         {
-            dy = (this.pos.y + this.yw) - this.system.bounds.bottom;
+            dy = (this.pos.y + this.yw) - this.system.bounds.height;
 
             if (0 < dy)
             {
@@ -2367,7 +2355,8 @@ Phaser.Physics.Ninja.Tile.prototype = {
     * @param {number} dy - Collision normal
     * @param {number} obj - Object this Tile collided with
     */
-    reportCollisionVsWorld: function (px, py, dx, dy) {
+    reportCollisionVsWorld: function (px, py, dx, dy, obj) {
+
         var p = this.pos;
         var o = this.oldpos;
 
@@ -2518,28 +2507,28 @@ Phaser.Physics.Ninja.Tile.prototype = {
                 this.signx = 1;
                 this.signy = -1;
                 this.sx = this.signx / Math.SQRT2;//get slope _unit_ normal
-                this.sy = this.signy / Math.SQRT2;//since normal is (1,-1), length is sqrt(1*1 + -1*-1) = sqrt(2)
+                this.sy = this.signy / Math.SQRT2;//since normal is (1,-1), length is sqrt(1*1 + -1*-1) = sqrt(2)               
             }
             else if (this.id == Phaser.Physics.Ninja.Tile.SLOPE_45DEGnn)
             {
                 this.signx = -1;
                 this.signy = -1;
                 this.sx = this.signx / Math.SQRT2;//get slope _unit_ normal
-                this.sy = this.signy / Math.SQRT2;//since normal is (1,-1), length is sqrt(1*1 + -1*-1) = sqrt(2)
+                this.sy = this.signy / Math.SQRT2;//since normal is (1,-1), length is sqrt(1*1 + -1*-1) = sqrt(2)               
             }
             else if (this.id == Phaser.Physics.Ninja.Tile.SLOPE_45DEGnp)
             {
                 this.signx = -1;
                 this.signy = 1;
                 this.sx = this.signx / Math.SQRT2;//get slope _unit_ normal
-                this.sy = this.signy / Math.SQRT2;//since normal is (1,-1), length is sqrt(1*1 + -1*-1) = sqrt(2)
+                this.sy = this.signy / Math.SQRT2;//since normal is (1,-1), length is sqrt(1*1 + -1*-1) = sqrt(2)               
             }
             else if (this.id == Phaser.Physics.Ninja.Tile.SLOPE_45DEGpp)
             {
                 this.signx = 1;
                 this.signy = 1;
                 this.sx = this.signx / Math.SQRT2;//get slope _unit_ normal
-                this.sy = this.signy / Math.SQRT2;//since normal is (1,-1), length is sqrt(1*1 + -1*-1) = sqrt(2)
+                this.sy = this.signy / Math.SQRT2;//since normal is (1,-1), length is sqrt(1*1 + -1*-1) = sqrt(2)               
             }
             else
             {
@@ -2830,18 +2819,28 @@ Phaser.Physics.Ninja.Tile.prototype = {
         }
     }
 
-};
+}
 
 /**
 * @name Phaser.Physics.Ninja.Tile#x
 * @property {number} x - The x position.
 */
 Object.defineProperty(Phaser.Physics.Ninja.Tile.prototype, "x", {
-
+    
+    /**
+    * The x position.
+    * @method x
+    * @return {number}
+    */
     get: function () {
         return this.pos.x - this.xw;
     },
 
+    /**
+    * The x position.
+    * @method x
+    * @param {number} value
+    */
     set: function (value) {
         this.pos.x = value;
     }
@@ -2853,11 +2852,21 @@ Object.defineProperty(Phaser.Physics.Ninja.Tile.prototype, "x", {
 * @property {number} y - The y position.
 */
 Object.defineProperty(Phaser.Physics.Ninja.Tile.prototype, "y", {
-
+    
+    /**
+    * The y position.
+    * @method y
+    * @return {number}
+    */
     get: function () {
         return this.pos.y - this.yw;
     },
 
+    /**
+    * The y position.
+    * @method y
+    * @param {number} value
+    */
     set: function (value) {
         this.pos.y = value;
     }
@@ -2870,7 +2879,13 @@ Object.defineProperty(Phaser.Physics.Ninja.Tile.prototype, "y", {
 * @readonly
 */
 Object.defineProperty(Phaser.Physics.Ninja.Tile.prototype, "bottom", {
-
+    
+    /**
+    * The sum of the y and height properties.
+    * @method bottom
+    * @return {number}
+    * @readonly
+    */
     get: function () {
         return this.pos.y + this.yw;
     }
@@ -2883,7 +2898,13 @@ Object.defineProperty(Phaser.Physics.Ninja.Tile.prototype, "bottom", {
 * @readonly
 */
 Object.defineProperty(Phaser.Physics.Ninja.Tile.prototype, "right", {
-
+    
+    /**
+    * The sum of the x and width properties.
+    * @method right
+    * @return {number}
+    * @readonly
+    */
     get: function () {
         return this.pos.x + this.xw;
     }
@@ -2936,7 +2957,6 @@ Phaser.Physics.Ninja.Tile.TYPE_67DEGs = 22;
 Phaser.Physics.Ninja.Tile.TYPE_67DEGb = 26;
 Phaser.Physics.Ninja.Tile.TYPE_HALF = 30;
 
-/* jshint camelcase: false */
 /**
 * @author       Richard Davey <rich@photonstorm.com>
 * @copyright    2014 Photon Storm Ltd.
@@ -3038,7 +3058,7 @@ Phaser.Physics.Ninja.Circle = function (body, x, y, radius) {
     this.circleTileProjections[Phaser.Physics.Ninja.Tile.TYPE_67DEGb] = this.projCircle_67DegB;
     this.circleTileProjections[Phaser.Physics.Ninja.Tile.TYPE_HALF] = this.projCircle_Half;
 
-};
+}
 
 Phaser.Physics.Ninja.Circle.prototype.constructor = Phaser.Physics.Ninja.Circle;
 
@@ -3078,7 +3098,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
     * @param {number} dy - Collision normal
     * @param {number} obj - Object this Circle collided with
     */
-    reportCollisionVsWorld: function (px, py, dx, dy) {
+    reportCollisionVsWorld: function (px, py, dx, dy, obj) {
 
         var p = this.pos;
         var o = this.oldpos;
@@ -3158,7 +3178,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
         }
         else
         {
-            dx = (this.pos.x + this.radius) - this.system.bounds.right;
+            dx = (this.pos.x + this.radius) - this.system.bounds.width;
 
             if (0 < dx)
             {
@@ -3174,7 +3194,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
         }
         else
         {
-            dy = (this.pos.y + this.radius) - this.system.bounds.bottom;
+            dy = (this.pos.y + this.radius) - this.system.bounds.height;
 
             if (0 < dy)
             {
@@ -3291,9 +3311,9 @@ Phaser.Physics.Ninja.Circle.prototype = {
         //if we're colliding vs. horiz. or vert. neighb, we simply project horiz/vert
         //if we're colliding diagonally, we need to collide vs. tile corner
 
-        if (oH === 0)
+        if (oH == 0)
         {
-            if (oV === 0)
+            if (oV == 0)
             {
                 //collision with current cell
                 if (x < y)
@@ -3301,7 +3321,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
                     //penetration in x is smaller; project in x
                     var dx = obj.pos.x - t.pos.x;//get sign for projection along x-axis
 
-                    //NOTE: should we handle the delta === 0 case?! and how? (project towards oldpos?)
+                    //NOTE: should we handle the delta == 0 case?! and how? (project towards oldpos?)
                     if (dx < 0)
                     {
                         obj.reportCollisionVsWorld(-x, 0, -1, 0, t);
@@ -3315,10 +3335,10 @@ Phaser.Physics.Ninja.Circle.prototype = {
                 }
                 else
                 {
-                    //penetration in y is smaller; project in y
+                    //penetration in y is smaller; project in y     
                     var dy = obj.pos.y - t.pos.y;//get sign for projection along y-axis
 
-                    //NOTE: should we handle the delta === 0 case?! and how? (project towards oldpos?)
+                    //NOTE: should we handle the delta == 0 case?! and how? (project towards oldpos?)                   
                     if (dy < 0)
                     {
                         obj.reportCollisionVsWorld(0, -y, 0, -1, t);
@@ -3339,7 +3359,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
                 return Phaser.Physics.Ninja.Circle.COL_AXIS;
             }
         }
-        else if (oV === 0)
+        else if (oV == 0)
         {
             //collision with horizontal neighbor
             obj.reportCollisionVsWorld(x * oH, 0, oH, 0, t);
@@ -3353,7 +3373,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
             var vx = t.pos.x + (oH * t.xw);
             var vy = t.pos.y + (oV * t.yw);
 
-            var dx = obj.pos.x - vx;//calc vert->circle vector
+            var dx = obj.pos.x - vx;//calc vert->circle vector      
             var dy = obj.pos.y - vy;
 
             var len = Math.sqrt(dx * dx + dy * dy);
@@ -3362,7 +3382,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
             if (0 < pen)
             {
                 //vertex is in the circle; project outward
-                if (len === 0)
+                if (len == 0)
                 {
                     //project out by 45deg
                     dx = oH / Math.SQRT2;
@@ -3409,9 +3429,9 @@ Phaser.Physics.Ninja.Circle.prototype = {
         var signy = t.signy;
         var lenP;
 
-        if (oH === 0)
+        if (oH == 0)
         {
-            if (oV === 0)
+            if (oV == 0)
             {
                 //colliding with current tile
 
@@ -3419,7 +3439,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
                 var sy = t.sy;
 
                 var ox = (obj.pos.x - (sx * obj.radius)) - t.pos.x;//this gives is the coordinates of the innermost
-                var oy = (obj.pos.y - (sy * obj.radius)) - t.pos.y;//point on the circle, relative to the tile center
+                var oy = (obj.pos.y - (sy * obj.radius)) - t.pos.y;//point on the circle, relative to the tile center   
 
                 //if the dotprod of (ox,oy) and (sx,sy) is negative, the innermost point is in the slope
                 //and we need toproject it out by the magnitude of the projection of (ox,oy) onto (sx,sy)
@@ -3438,7 +3458,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
                         lenP = x;
                         y = 0;
 
-                        //get sign for projection along x-axis
+                        //get sign for projection along x-axis      
                         if ((obj.pos.x - t.pos.x) < 0)
                         {
                             x *= -1;
@@ -3450,7 +3470,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
                         lenP = y;
                         x = 0;
 
-                        //get sign for projection along y-axis
+                        //get sign for projection along y-axis      
                         if ((obj.pos.y - t.pos.y) < 0)
                         {
                             y *= -1;
@@ -3493,13 +3513,13 @@ Phaser.Physics.Ninja.Circle.prototype = {
                     var sy = t.sy;
 
                     var ox = obj.pos.x - (t.pos.x - (signx * t.xw));//this gives is the coordinates of the innermost
-                    var oy = obj.pos.y - (t.pos.y + (oV * t.yw));//point on the circle, relative to the closest tile vert
+                    var oy = obj.pos.y - (t.pos.y + (oV * t.yw));//point on the circle, relative to the closest tile vert   
 
                     //if the component of (ox,oy) parallel to the normal's righthand normal
                     //has the same sign as the slope of the slope (the sign of the slope's slope is signx*signy)
                     //then we project by the vertex, otherwise by the normal.
-                    //note that this is simply a VERY tricky/weird method of determining
-                    //if the circle is in side the slope/face's voronoi region, or that of the vertex.
+                    //note that this is simply a VERY tricky/weird method of determining 
+                    //if the circle is in side the slope/face's voronoi region, or that of the vertex.                                            
                     var perp = (ox * -sy) + (oy * sx);
                     if (0 < (perp * signx * signy))
                     {
@@ -3538,7 +3558,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
                 }
             }
         }
-        else if (oV === 0)
+        else if (oV == 0)
         {
             //colliding horizontally
             if ((signx * oH) < 0)
@@ -3557,7 +3577,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
                 var sy = t.sy;
 
                 var ox = obj.pos.x - (t.pos.x + (oH * t.xw));//this gives is the coordinates of the innermost
-                var oy = obj.pos.y - (t.pos.y - (signy * t.yw));//point on the circle, relative to the closest tile vert
+                var oy = obj.pos.y - (t.pos.y - (signy * t.yw));//point on the circle, relative to the closest tile vert    
 
                 //if the component of (ox,oy) parallel to the normal's righthand normal
                 //has the same sign as the slope of the slope (the sign of the slope's slope is signx*signy)
@@ -3567,8 +3587,8 @@ Phaser.Physics.Ninja.Circle.prototype = {
                 // for horizontal, if the perp prod and the slope's slope agree, circle is inside.
                 //  ..but this is only a property of flahs' coord system (i.e the rules might swap
                 // in righthanded systems))
-                //note that this is simply a VERY tricky/weird method of determining
-                //if the circle is in side the slope/face's voronio region, or that of the vertex.
+                //note that this is simply a VERY tricky/weird method of determining 
+                //if the circle is in side the slope/face's voronio region, or that of the vertex.                                            
                 var perp = (ox * -sy) + (oy * sx);
                 if ((perp * signx * signy) < 0)
                 {
@@ -3623,7 +3643,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
                 var vx = t.pos.x + (oH * t.xw);
                 var vy = t.pos.y + (oV * t.yw);
 
-                var dx = obj.pos.x - vx;//calc vert->circle vector
+                var dx = obj.pos.x - vx;//calc vert->circle vector      
                 var dy = obj.pos.y - vy;
 
                 var len = Math.sqrt(dx * dx + dy * dy);
@@ -3631,7 +3651,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
                 if (0 < pen)
                 {
                     //vertex is in the circle; project outward
-                    if (len === 0)
+                    if (len == 0)
                     {
                         //project out by 45deg
                         dx = oH / Math.SQRT2;
@@ -3679,13 +3699,13 @@ Phaser.Physics.Ninja.Circle.prototype = {
         var signy = t.signy;
         var lenP;
 
-        if (oH === 0)
+        if (oH == 0)
         {
-            if (oV === 0)
+            if (oV == 0)
             {
                 //colliding with current tile
 
-                var ox = (t.pos.x + (signx * t.xw)) - obj.pos.x;//(ox,oy) is the vector from the circle to
+                var ox = (t.pos.x + (signx * t.xw)) - obj.pos.x;//(ox,oy) is the vector from the circle to 
                 var oy = (t.pos.y + (signy * t.yw)) - obj.pos.y;//tile-circle's center
 
                 var twid = t.xw * 2;
@@ -3704,7 +3724,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
                         lenP = x;
                         y = 0;
 
-                        //get sign for projection along x-axis
+                        //get sign for projection along x-axis      
                         if ((obj.pos.x - t.pos.x) < 0)
                         {
                             x *= -1;
@@ -3716,7 +3736,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
                         lenP = y;
                         x = 0;
 
-                        //get sign for projection along y-axis
+                        //get sign for projection along y-axis      
                         if ((obj.pos.y - t.pos.y) < 0)
                         {
                             y *= -1;
@@ -3767,7 +3787,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
                     var vx = t.pos.x - (signx * t.xw);
                     var vy = t.pos.y + (oV * t.yw);
 
-                    var dx = obj.pos.x - vx;//calc vert->circle vector
+                    var dx = obj.pos.x - vx;//calc vert->circle vector      
                     var dy = obj.pos.y - vy;
 
                     var len = Math.sqrt(dx * dx + dy * dy);
@@ -3775,7 +3795,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
                     if (0 < pen)
                     {
                         //vertex is in the circle; project outward
-                        if (len === 0)
+                        if (len == 0)
                         {
                             //project out vertically
                             dx = 0;
@@ -3794,7 +3814,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
                 }
             }
         }
-        else if (oV === 0)
+        else if (oV == 0)
         {
             //colliding horizontally
             if ((signx * oH) < 0)
@@ -3812,7 +3832,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
                 var vx = t.pos.x + (oH * t.xw);
                 var vy = t.pos.y - (signy * t.yw);
 
-                var dx = obj.pos.x - vx;//calc vert->circle vector
+                var dx = obj.pos.x - vx;//calc vert->circle vector      
                 var dy = obj.pos.y - vy;
 
                 var len = Math.sqrt(dx * dx + dy * dy);
@@ -3820,7 +3840,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
                 if (0 < pen)
                 {
                     //vertex is in the circle; project outward
-                    if (len === 0)
+                    if (len == 0)
                     {
                         //project out horizontally
                         dx = oH;
@@ -3855,7 +3875,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
                 var vx = t.pos.x + (oH * t.xw);
                 var vy = t.pos.y + (oV * t.yw);
 
-                var dx = obj.pos.x - vx;//calc vert->circle vector
+                var dx = obj.pos.x - vx;//calc vert->circle vector      
                 var dy = obj.pos.y - vy;
 
                 var len = Math.sqrt(dx * dx + dy * dy);
@@ -3863,7 +3883,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
                 if (0 < pen)
                 {
                     //vertex is in the circle; project outward
-                    if (len === 0)
+                    if (len == 0)
                     {
                         //project out by 45deg
                         dx = oH / Math.SQRT2;
@@ -3913,14 +3933,14 @@ Phaser.Physics.Ninja.Circle.prototype = {
         var signy = t.signy;
         var lenP;
 
-        if (oH === 0)
+        if (oH == 0)
         {
-            if (oV === 0)
+            if (oV == 0)
             {
                 //colliding with current tile
 
 
-                var ox = obj.pos.x - (t.pos.x - (signx * t.xw));//(ox,oy) is the vector from the tile-circle to
+                var ox = obj.pos.x - (t.pos.x - (signx * t.xw));//(ox,oy) is the vector from the tile-circle to 
                 var oy = obj.pos.y - (t.pos.y - (signy * t.yw));//the circle's center
 
                 var twid = t.xw * 2;
@@ -3939,7 +3959,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
                         lenP = x;
                         y = 0;
 
-                        //get sign for projection along x-axis
+                        //get sign for projection along x-axis      
                         if ((obj.pos.x - t.pos.x) < 0)
                         {
                             x *= -1;
@@ -3951,7 +3971,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
                         lenP = y;
                         x = 0;
 
-                        //get sign for projection along y-axis
+                        //get sign for projection along y-axis      
                         if ((obj.pos.y - t.pos.y) < 0)
                         {
                             y *= -1;
@@ -3967,7 +3987,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
                     }
                     else
                     {
-                        //note: len should NEVER be === 0, because if it is,
+                        //note: len should NEVER be == 0, because if it is, 
                         //projeciton by an axis shoudl always be shorter, and we should
                         //never arrive here
                         ox /= len;
@@ -3995,7 +4015,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
                     //obj in neighboring cell pointed at by tile normal;
                     //we could only be colliding vs the tile-circle surface
 
-                    var ox = obj.pos.x - (t.pos.x - (signx * t.xw));//(ox,oy) is the vector from the tile-circle to
+                    var ox = obj.pos.x - (t.pos.x - (signx * t.xw));//(ox,oy) is the vector from the tile-circle to 
                     var oy = obj.pos.y - (t.pos.y - (signy * t.yw));//the circle's center
 
                     var twid = t.xw * 2;
@@ -4008,7 +4028,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
                     if (0 < pen)
                     {
 
-                        //note: len should NEVER be === 0, because if it is,
+                        //note: len should NEVER be == 0, because if it is, 
                         //obj is not in a neighboring cell!
                         ox /= len;
                         oy /= len;
@@ -4020,7 +4040,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
                 }
             }
         }
-        else if (oV === 0)
+        else if (oV == 0)
         {
             //colliding horizontally
             if ((signx * oH) < 0)
@@ -4035,7 +4055,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
                 //obj in neighboring cell pointed at by tile normal;
                 //we could only be colliding vs the tile-circle surface
 
-                var ox = obj.pos.x - (t.pos.x - (signx * t.xw));//(ox,oy) is the vector from the tile-circle to
+                var ox = obj.pos.x - (t.pos.x - (signx * t.xw));//(ox,oy) is the vector from the tile-circle to 
                 var oy = obj.pos.y - (t.pos.y - (signy * t.yw));//the circle's center
 
                 var twid = t.xw * 2;
@@ -4048,7 +4068,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
                 if (0 < pen)
                 {
 
-                    //note: len should NEVER be === 0, because if it is,
+                    //note: len should NEVER be == 0, because if it is, 
                     //obj is not in a neighboring cell!
                     ox /= len;
                     oy /= len;
@@ -4067,7 +4087,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
                 //obj in diag neighb cell pointed at by tile normal;
                 //we could only be colliding vs the tile-circle surface
 
-                var ox = obj.pos.x - (t.pos.x - (signx * t.xw));//(ox,oy) is the vector from the tile-circle to
+                var ox = obj.pos.x - (t.pos.x - (signx * t.xw));//(ox,oy) is the vector from the tile-circle to 
                 var oy = obj.pos.y - (t.pos.y - (signy * t.yw));//the circle's center
 
                 var twid = t.xw * 2;
@@ -4080,7 +4100,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
                 if (0 < pen)
                 {
 
-                    //note: len should NEVER be === 0, because if it is,
+                    //note: len should NEVER be == 0, because if it is, 
                     //obj is not in a neighboring cell!
                     ox /= len;
                     oy /= len;
@@ -4097,7 +4117,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
                 var vx = t.pos.x + (oH * t.xw);
                 var vy = t.pos.y + (oV * t.yw);
 
-                var dx = obj.pos.x - vx;//calc vert->circle vector
+                var dx = obj.pos.x - vx;//calc vert->circle vector      
                 var dy = obj.pos.y - vy;
 
                 var len = Math.sqrt(dx * dx + dy * dy);
@@ -4105,7 +4125,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
                 if (0 < pen)
                 {
                     //vertex is in the circle; project outward
-                    if (len === 0)
+                    if (len == 0)
                     {
                         //project out by 45deg
                         dx = oH / Math.SQRT2;
@@ -4160,84 +4180,85 @@ Phaser.Physics.Ninja.Circle.prototype = {
         var signy = t.signy;
 
         var celldp = (oH*signx + oV*signy);//this tells us about the configuration of cell-offset relative to tile normal
-        if (0 < celldp)
+        if(0 < celldp)
         {
             //obj is in "far" (pointed-at-by-normal) neighbor of halffull tile, and will never hit
             return Phaser.Physics.Ninja.Circle.COL_NONE;
         }
-        else if (oH === 0)
+        else if(oH == 0)
         {
-            if (oV === 0)
+            if(oV == 0)
             {
                 //colliding with current tile
                 var r = obj.radius;
                 var ox = (obj.pos.x - (signx*r)) - t.pos.x;//this gives is the coordinates of the innermost
                 var oy = (obj.pos.y - (signy*r)) - t.pos.y;//point on the circle, relative to the tile center
-
-
-                //we perform operations analogous to the 45deg tile, except we're using
+                
+        
+                //we perform operations analogous to the 45deg tile, except we're using 
                 //an axis-aligned slope instead of an angled one..
                 var sx = signx;
                 var sy = signy;
-
+                
                 //if the dotprod of (ox,oy) and (sx,sy) is negative, the corner is in the slope
                 //and we need toproject it out by the magnitude of the projection of (ox,oy) onto (sx,sy)
                 var dp = (ox*sx) + (oy*sy);
-                if (dp < 0)
+                if(dp < 0)
                 {
                     //collision; project delta onto slope and use this to displace the object
                     sx *= -dp;//(sx,sy) is now the projection vector
-                    sy *= -dp;
-
-
+                    sy *= -dp;      
+                    
+                    
                     var lenN = Math.sqrt(sx*sx + sy*sy);
                     var lenP = Math.sqrt(x*x + y*y);
-
-                    if (lenP < lenN)
+        
+                    if(lenP < lenN)
                     {
                         obj.reportCollisionVsWorld(x,y,x/lenP, y/lenP,t);
 
                         return Phaser.Physics.Ninja.Circle.COL_AXIS;
                     }
                     else
-                    {
+                    {       
                         obj.reportCollisionVsWorld(sx,sy,t.signx,t.signy);
 
                         return Phaser.Physics.Ninja.Circle.COL_OTHER;
                     }
                     return true;
-                }
-
+                }           
+                
             }
             else
             {
                 //colliding vertically
 
-                if (celldp === 0)
+                if(celldp == 0)
                 {
-
+        
+                    var r = obj.radius;
                     var dx = obj.pos.x - t.pos.x;
-
+                            
                     //we're in a cell perpendicular to the normal, and can collide vs. halfedge vertex
                     //or halfedge side
-                    if ((dx*signx) < 0)
+                    if((dx*signx) < 0)
                     {
                         //collision with halfedge side
                         obj.reportCollisionVsWorld(0,y*oV,0,oV,t);
-
-                        return Phaser.Physics.Ninja.Circle.COL_AXIS;
+                        
+                        return Phaser.Physics.Ninja.Circle.COL_AXIS;                        
                     }
                     else
                     {
                         //collision with halfedge vertex
                         var dy = obj.pos.y - (t.pos.y + oV*t.yw);//(dx,dy) is now the vector from the appropriate halfedge vertex to the circle
-
+                        
                         var len = Math.sqrt(dx*dx + dy*dy);
                         var pen = obj.radius - len;
-                        if (0 < pen)
+                        if(0 < pen)
                         {
                             //vertex is in the circle; project outward
-                            if (len === 0)
+                            if(len == 0)
                             {
                                 //project out by 45deg
                                 dx = signx / Math.SQRT2;
@@ -4248,12 +4269,12 @@ Phaser.Physics.Ninja.Circle.prototype = {
                                 dx /= len;
                                 dy /= len;
                             }
-
+                                
                             obj.reportCollisionVsWorld(dx*pen, dy*pen, dx, dy, t);
-
+                            
                             return Phaser.Physics.Ninja.Circle.COL_OTHER;
-                        }
-
+                        }                   
+                        
                     }
                 }
                 else
@@ -4262,40 +4283,41 @@ Phaser.Physics.Ninja.Circle.prototype = {
                     //we can only collide with the cell edge
                     //collision with vertical neighbor
                     obj.reportCollisionVsWorld(0,y*oV,0,oV,t);
-
+                    
                     return Phaser.Physics.Ninja.Circle.COL_AXIS;
                 }
-
+                
             }
         }
-        else if (oV === 0)
+        else if(oV == 0)
         {
             //colliding horizontally
-            if (celldp === 0)
+            if(celldp == 0)
             {
-
+        
+                var r = obj.radius;
                 var dy = obj.pos.y - t.pos.y;
-
+                            
                 //we're in a cell perpendicular to the normal, and can collide vs. halfedge vertex
                 //or halfedge side
-                if ((dy*signy) < 0)
+                if((dy*signy) < 0)
                 {
                     //collision with halfedge side
                     obj.reportCollisionVsWorld(x*oH,0,oH,0,t);
-
-                    return Phaser.Physics.Ninja.Circle.COL_AXIS;
+                    
+                    return Phaser.Physics.Ninja.Circle.COL_AXIS;                        
                 }
                 else
                 {
                     //collision with halfedge vertex
                     var dx = obj.pos.x - (t.pos.x + oH*t.xw);//(dx,dy) is now the vector from the appropriate halfedge vertex to the circle
-
+                        
                     var len = Math.sqrt(dx*dx + dy*dy);
                     var pen = obj.radius - len;
-                    if (0 < pen)
+                    if(0 < pen)
                     {
                         //vertex is in the circle; project outward
-                        if (len === 0)
+                        if(len == 0)
                         {
                             //project out by 45deg
                             dx = signx / Math.SQRT2;
@@ -4306,25 +4328,25 @@ Phaser.Physics.Ninja.Circle.prototype = {
                             dx /= len;
                             dy /= len;
                         }
-
+                                
                         obj.reportCollisionVsWorld(dx*pen, dy*pen, dx, dy, t);
-
+                        
                         return Phaser.Physics.Ninja.Circle.COL_OTHER;
-                    }
-
+                    }                   
+                        
                 }
             }
             else
-            {
+            {           
                 //due to the first conditional (celldp >0), we know w're in the cell "opposite" the normal, and so
                 //we can only collide with the cell edge
                 obj.reportCollisionVsWorld(x*oH, 0, oH, 0, t);
-
+                
                 return Phaser.Physics.Ninja.Circle.COL_AXIS;
-            }
+            }       
         }
         else
-        {
+        {       
             //colliding diagonally; we know, due to the initial (celldp >0) test which has failed
             //if we've reached this point, that we're in a diagonal neighbor on the non-normal side, so
             //we could only be colliding with the cell vertex, if at all.
@@ -4332,16 +4354,16 @@ Phaser.Physics.Ninja.Circle.prototype = {
             //get diag vertex position
             var vx = t.pos.x + (oH*t.xw);
             var vy = t.pos.y + (oV*t.yw);
-
-            var dx = obj.pos.x - vx;//calc vert->circle vector
+                
+            var dx = obj.pos.x - vx;//calc vert->circle vector      
             var dy = obj.pos.y - vy;
-
+                
             var len = Math.sqrt(dx*dx + dy*dy);
             var pen = obj.radius - len;
-            if (0 < pen)
+            if(0 < pen)
             {
                 //vertex is in the circle; project outward
-                if (len === 0)
+                if(len == 0)
                 {
                     //project out by 45deg
                     dx = oH / Math.SQRT2;
@@ -4354,14 +4376,14 @@ Phaser.Physics.Ninja.Circle.prototype = {
                 }
 
                 obj.reportCollisionVsWorld(dx*pen, dy*pen, dx, dy, t);
-
+                
                 return Phaser.Physics.Ninja.Circle.COL_OTHER;
-            }
-
+            }       
+            
         }
-
+        
         return Phaser.Physics.Ninja.Circle.COL_NONE;
-
+        
     },
 
     /**
@@ -4377,7 +4399,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
     * @return {number} The result of the collision.
     */
     projCircle_22DegS: function (x,y,oH,oV,obj,t) {
-
+        
         //if the object is in a cell pointed at by signy, no collision will ever occur
         //otherwise,
         //
@@ -4386,116 +4408,115 @@ Phaser.Physics.Ninja.Circle.prototype = {
         //if obj is in this tile: collide vs slope or vertex
         //if obj is horiz neighb in direction of slope: collide vs. slope or vertex
         //if obj is horiz neighb against the slope:
-        //   if (distance in y from circle to 90deg corner of tile < 1/2 tileheight, collide vs. face)
+        //   if(distance in y from circle to 90deg corner of tile < 1/2 tileheight, collide vs. face)
         //   else(collide vs. corner of slope) (vert collision with a non-grid-aligned vert)
         //if obj is vert neighb against direction of slope: collide vs. face
 
-        var lenP;
         var signx = t.signx;
         var signy = t.signy;
 
-        if (0 < (signy*oV))
+        if(0 < (signy*oV))
         {
             //object will never collide vs tile, it can't reach that far
-
+            
             return Phaser.Physics.Ninja.Circle.COL_NONE;
         }
-        else if (oH === 0)
+        else if(oH == 0)
         {
-            if (oV === 0)
+            if(oV == 0)
             {
                 //colliding with current tile
                 //we could only be colliding vs the slope OR a vertex
                 //look at the vector form the closest vert to the circle to decide
-
+        
                 var sx = t.sx;
                 var sy = t.sy;
-
+                
                 var r = obj.radius;
                 var ox = obj.pos.x - (t.pos.x - (signx*t.xw));//this gives is the coordinates of the innermost
-                var oy = obj.pos.y - t.pos.y;//point on the circle, relative to the tile corner
-
+                var oy = obj.pos.y - t.pos.y;//point on the circle, relative to the tile corner 
+            
                 //if the component of (ox,oy) parallel to the normal's righthand normal
                 //has the same sign as the slope of the slope (the sign of the slope's slope is signx*signy)
                 //then we project by the vertex, otherwise by the normal or axially.
-                //note that this is simply a VERY tricky/weird method of determining
+                //note that this is simply a VERY tricky/weird method of determining 
                 //if the circle is in side the slope/face's voronio region, or that of the vertex.
-
+                    
                 var perp = (ox*-sy) + (oy*sx);
-                if (0 < (perp*signx*signy))
+                if(0 < (perp*signx*signy))
                 {
                     //collide vs. vertex
                     var len = Math.sqrt(ox*ox + oy*oy);
                     var pen = r - len;
-                    if (0 < pen)
+                    if(0 < pen)
                     {
                         //note: if len=0, then perp=0 and we'll never reach here, so don't worry about div-by-0
                         ox /= len;
                         oy /= len;
 
                         obj.reportCollisionVsWorld(ox*pen, oy*pen, ox, oy, t);
-
+                        
                         return Phaser.Physics.Ninja.Circle.COL_OTHER;
-                    }
+                    }                   
                 }
                 else
                 {
                     //collide vs. slope or vs axis
-                    ox -= r*sx;//this gives us the vector from
+                    ox -= r*sx;//this gives us the vector from  
                     oy -= r*sy;//a point on the slope to the innermost point on the circle
-
+            
                     //if the dotprod of (ox,oy) and (sx,sy) is negative, the point on the circle is in the slope
                     //and we need toproject it out by the magnitude of the projection of (ox,oy) onto (sx,sy)
                     var dp = (ox*sx) + (oy*sy);
-
-                    if (dp < 0)
+                    
+                    if(dp < 0)
                     {
                         //collision; project delta onto slope and use this to displace the object
                         sx *= -dp;//(sx,sy) is now the projection vector
-                        sy *= -dp;
-
+                        sy *= -dp;      
+                            
                         var lenN = Math.sqrt(sx*sx + sy*sy);
-
+                
                         //find the smallest axial projection vector
-                        if (x < y)
-                        {
+                        if(x < y)
+                        {                   
                             //penetration in x is smaller
                             lenP = x;
-                            y = 0;
-                            //get sign for projection along x-axis
-                            if ((obj.pos.x - t.pos.x) < 0)
+                            y = 0;  
+                            //get sign for projection along x-axis      
+                            if((obj.pos.x - t.pos.x) < 0)
                             {
                                 x *= -1;
                             }
                         }
                         else
-                        {
+                        {       
                             //penetration in y is smaller
                             lenP = y;
-                            x = 0;
-                            //get sign for projection along y-axis
-                            if ((obj.pos.y - t.pos.y)< 0)
+                            x = 0;  
+                            //get sign for projection along y-axis      
+                            if((obj.pos.y - t.pos.y)< 0)
                             {
                                 y *= -1;
-                            }
+                            }           
                         }
 
-                        if (lenP < lenN)
+                        if(lenP < lenN)
                         {
                             obj.reportCollisionVsWorld(x,y,x/lenP, y/lenP, t);
 
                             return Phaser.Physics.Ninja.Circle.COL_AXIS;
                         }
                         else
-                        {
+                        {               
                             obj.reportCollisionVsWorld(sx,sy,t.sx,t.sy,t);
 
                             return Phaser.Physics.Ninja.Circle.COL_OTHER;
                         }
-
+                
                     }
                 }
-
+                
             }
             else
             {
@@ -4503,42 +4524,42 @@ Phaser.Physics.Ninja.Circle.prototype = {
                 //due to the first conditional far above
 
                 obj.reportCollisionVsWorld(0,y*oV, 0, oV, t);
-
+                    
                 return Phaser.Physics.Ninja.Circle.COL_AXIS;
-            }
+            }       
         }
-        else if (oV === 0)
+        else if(oV == 0)
         {
             //colliding horizontally
-            if ((signx*oH) < 0)
+            if((signx*oH) < 0)
             {
                 //colliding with face/edge OR with corner of wedge, depending on our position vertically
-
+                    
                 //collide vs. vertex
                 //get diag vertex position
                 var vx = t.pos.x - (signx*t.xw);
                 var vy = t.pos.y;
-
-                var dx = obj.pos.x - vx;//calc vert->circle vector
+                        
+                var dx = obj.pos.x - vx;//calc vert->circle vector      
                 var dy = obj.pos.y - vy;
-
-                if ((dy*signy) < 0)
+                        
+                if((dy*signy) < 0)
                 {
                     //colliding vs face
                     obj.reportCollisionVsWorld(x*oH, 0, oH, 0, t);
-
-                    return Phaser.Physics.Ninja.Circle.COL_AXIS;
+                    
+                    return Phaser.Physics.Ninja.Circle.COL_AXIS;                    
                 }
                 else
                 {
                     //colliding vs. vertex
-
+                        
                     var len = Math.sqrt(dx*dx + dy*dy);
                     var pen = obj.radius - len;
-                    if (0 < pen)
+                    if(0 < pen)
                     {
                         //vertex is in the circle; project outward
-                        if (len === 0)
+                        if(len == 0)
                         {
                             //project out by 45deg
                             dx = oH / Math.SQRT2;
@@ -4551,7 +4572,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
                         }
 
                         obj.reportCollisionVsWorld(dx*pen, dy*pen, dx, dy, t);
-
+                        
                         return Phaser.Physics.Ninja.Circle.COL_OTHER;
                     }
                 }
@@ -4560,13 +4581,13 @@ Phaser.Physics.Ninja.Circle.prototype = {
             {
                 //we could only be colliding vs the slope OR a vertex
                 //look at the vector form the closest vert to the circle to decide
-
+        
                 var sx = t.sx;
                 var sy = t.sy;
-
+                    
                 var ox = obj.pos.x - (t.pos.x + (oH*t.xw));//this gives is the coordinates of the innermost
-                var oy = obj.pos.y - (t.pos.y - (signy*t.yw));//point on the circle, relative to the closest tile vert
-
+                var oy = obj.pos.y - (t.pos.y - (signy*t.yw));//point on the circle, relative to the closest tile vert  
+        
                 //if the component of (ox,oy) parallel to the normal's righthand normal
                 //has the same sign as the slope of the slope (the sign of the slope's slope is signx*signy)
                 //then we project by the normal, otherwise by the vertex.
@@ -4575,41 +4596,41 @@ Phaser.Physics.Ninja.Circle.prototype = {
                 // for horizontal, if the perp prod and the slope's slope agree, circle is inside.
                 //  ..but this is only a property of flahs' coord system (i.e the rules might swap
                 // in righthanded systems))
-                //note that this is simply a VERY tricky/weird method of determining
-                //if the circle is in side the slope/face's voronio region, or that of the vertex.
+                //note that this is simply a VERY tricky/weird method of determining 
+                //if the circle is in side the slope/face's voronio region, or that of the vertex.                                            
                 var perp = (ox*-sy) + (oy*sx);
-                if ((perp*signx*signy) < 0)
+                if((perp*signx*signy) < 0)
                 {
                     //collide vs. vertex
                     var len = Math.sqrt(ox*ox + oy*oy);
                     var pen = obj.radius - len;
-                    if (0 < pen)
+                    if(0 < pen)
                     {
                         //note: if len=0, then perp=0 and we'll never reach here, so don't worry about div-by-0
                         ox /= len;
                         oy /= len;
 
                         obj.reportCollisionVsWorld(ox*pen, oy*pen, ox, oy, t);
-
+                        
                         return Phaser.Physics.Ninja.Circle.COL_OTHER;
-                    }
+                    }                   
                 }
                 else
                 {
                     //collide vs. slope
-
+                            
                     //if the component of (ox,oy) parallel to the normal is less than the circle radius, we're
                     //penetrating the slope. note that this method of penetration calculation doesn't hold
                     //in general (i.e it won't work if the circle is in the slope), but works in this case
                     //because we know the circle is in a neighboring cell
                     var dp = (ox*sx) + (oy*sy);
-                    var pen = obj.radius - Math.abs(dp);//note: we don't need the abs because we know the dp will be positive, but just in case..
+                    var pen = obj.radius - Math.abs(dp);//note: we don't need the abs because we know the dp will be positive, but just in case..                
 
-                    if (0 < pen)
+                    if(0 < pen)
                     {
                         //collision; circle out along normal by penetration amount
                         obj.reportCollisionVsWorld(sx*pen, sy*pen, sx, sy, t);
-
+                        
                         return Phaser.Physics.Ninja.Circle.COL_OTHER;
                     }
                 }
@@ -4625,16 +4646,16 @@ Phaser.Physics.Ninja.Circle.prototype = {
             //get diag vertex position
             var vx = t.pos.x + (oH*t.xw);
             var vy = t.pos.y + (oV*t.yw);
-
-            var dx = obj.pos.x - vx;//calc vert->circle vector
+                
+            var dx = obj.pos.x - vx;//calc vert->circle vector      
             var dy = obj.pos.y - vy;
-
+                
             var len = Math.sqrt(dx*dx + dy*dy);
             var pen = obj.radius - len;
-            if (0 < pen)
+            if(0 < pen)
             {
                 //vertex is in the circle; project outward
-                if (len === 0)
+                if(len == 0)
                 {
                     //project out by 45deg
                     dx = oH / Math.SQRT2;
@@ -4647,7 +4668,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
                 }
 
                 obj.reportCollisionVsWorld(dx*pen, dy*pen, dx, dy, t);
-
+                
                 return Phaser.Physics.Ninja.Circle.COL_OTHER;
             }
         }
@@ -4682,82 +4703,81 @@ Phaser.Physics.Ninja.Circle.prototype = {
         //
         //if obj is vert neighb in direction of slope: collide vs. slope or vertex
 
-        var lenP;
         var signx = t.signx;
         var signy = t.signy;
 
-        if (oH === 0)
+        if(oH == 0)
         {
-            if (oV === 0)
+            if(oV == 0)
             {
                 //colliding with current cell
 
                 var sx = t.sx;
                 var sy = t.sy;
-
+        
                 var r = obj.radius;
                 var ox = (obj.pos.x - (sx*r)) - (t.pos.x - (signx*t.xw));//this gives is the coordinates of the innermost
                 var oy = (obj.pos.y - (sy*r)) - (t.pos.y + (signy*t.yw));//point on the AABB, relative to a point on the slope
-
+            
                 //if the dotprod of (ox,oy) and (sx,sy) is negative, the point on the circle is in the slope
                 //and we need toproject it out by the magnitude of the projection of (ox,oy) onto (sx,sy)
                 var dp = (ox*sx) + (oy*sy);
-
-                if (dp < 0)
+                        
+                if(dp < 0)
                 {
                     //collision; project delta onto slope and use this to displace the object
                     sx *= -dp;//(sx,sy) is now the projection vector
-                    sy *= -dp;
-
+                    sy *= -dp;      
+                                
                     var lenN = Math.sqrt(sx*sx + sy*sy);
-
+                    
                     //find the smallest axial projection vector
-                    if (x < y)
-                    {
+                    if(x < y)
+                    {                   
                         //penetration in x is smaller
                         lenP = x;
-                        y = 0;
-                        //get sign for projection along x-axis
-                        if ((obj.pos.x - t.pos.x) < 0)
+                        y = 0;  
+                        //get sign for projection along x-axis      
+                        if((obj.pos.x - t.pos.x) < 0)
                         {
                             x *= -1;
                         }
                     }
                     else
-                    {
+                    {       
                         //penetration in y is smaller
                         lenP = y;
-                        x = 0;
-                        //get sign for projection along y-axis
-                        if ((obj.pos.y - t.pos.y)< 0)
+                        x = 0;  
+                        //get sign for projection along y-axis      
+                        if((obj.pos.y - t.pos.y)< 0)
                         {
                             y *= -1;
-                        }
+                        }           
                     }
-
-                    if (lenP < lenN)
+        
+                    if(lenP < lenN)
                     {
                         obj.reportCollisionVsWorld(x, y, x/lenP, y/lenP, t);
-
+                        
                         return Phaser.Physics.Ninja.Circle.COL_AXIS;
                     }
                     else
-                    {
+                    {           
                         obj.reportCollisionVsWorld(sx, sy, t.sx, t.sy, t);
-
+                
                         return Phaser.Physics.Ninja.Circle.COL_OTHER;
-                    }
-                }
+                    }   
+                }                   
             }
             else
             {
                 //colliding vertically
-
-                if ((signy*oV) < 0)
+                
+                if((signy*oV) < 0)
                 {
                     //colliding with face/edge
                     obj.reportCollisionVsWorld(0, y*oV, 0, oV, t);
-
+                    
                     return Phaser.Physics.Ninja.Circle.COL_AXIS;
                 }
                 else
@@ -4767,77 +4787,77 @@ Phaser.Physics.Ninja.Circle.prototype = {
 
                     var sx = t.sx;
                     var sy = t.sy;
-
+                    
                     var ox = obj.pos.x - (t.pos.x - (signx*t.xw));//this gives is the coordinates of the innermost
-                    var oy = obj.pos.y - (t.pos.y + (signy*t.yw));//point on the circle, relative to the closest tile vert
+                    var oy = obj.pos.y - (t.pos.y + (signy*t.yw));//point on the circle, relative to the closest tile vert  
 
                     //if the component of (ox,oy) parallel to the normal's righthand normal
                     //has the same sign as the slope of the slope (the sign of the slope's slope is signx*signy)
                     //then we project by the vertex, otherwise by the normal.
-                    //note that this is simply a VERY tricky/weird method of determining
-                    //if the circle is in side the slope/face's voronio region, or that of the vertex.
+                    //note that this is simply a VERY tricky/weird method of determining 
+                    //if the circle is in side the slope/face's voronio region, or that of the vertex.                                            
                     var perp = (ox*-sy) + (oy*sx);
-                    if (0 < (perp*signx*signy))
+                    if(0 < (perp*signx*signy))
                     {
                         //collide vs. vertex
                         var len = Math.sqrt(ox*ox + oy*oy);
                         var pen = obj.radius - len;
-                        if (0 < pen)
+                        if(0 < pen)
                         {
                             //note: if len=0, then perp=0 and we'll never reach here, so don't worry about div-by-0
                             ox /= len;
                             oy /= len;
 
                             obj.reportCollisionVsWorld(ox*pen, oy*pen, ox, oy, t);
-
+                            
                             return Phaser.Physics.Ninja.Circle.COL_OTHER;
-                        }
+                        }                   
                     }
                     else
                     {
                         //collide vs. slope
-
+                        
                         //if the component of (ox,oy) parallel to the normal is less than the circle radius, we're
                         //penetrating the slope. note that this method of penetration calculation doesn't hold
                         //in general (i.e it won't work if the circle is in the slope), but works in this case
                         //because we know the circle is in a neighboring cell
                         var dp = (ox*sx) + (oy*sy);
                         var pen = obj.radius - Math.abs(dp);//note: we don't need the abs because we know the dp will be positive, but just in case..
-                        if (0 < pen)
+                        if(0 < pen)
                         {
                             //collision; circle out along normal by penetration amount
                             obj.reportCollisionVsWorld(sx*pen, sy*pen,sx, sy, t);
-
+                            
                             return Phaser.Physics.Ninja.Circle.COL_OTHER;
                         }
                     }
                 }
             }
         }
-        else if (oV === 0)
+        else if(oV == 0)
         {
             //colliding horizontally
-
-            if ((signx*oH) < 0)
+            
+            if((signx*oH) < 0)
             {
                 //colliding with face/edge
                 obj.reportCollisionVsWorld(x*oH, 0, oH, 0, t);
-
+                
                 return Phaser.Physics.Ninja.Circle.COL_AXIS;
             }
             else
             {
                 //colliding with edge, slope, or vertex
-
+            
                 var ox = obj.pos.x - (t.pos.x + (signx*t.xw));//this gives is the coordinates of the innermost
-                var oy = obj.pos.y - t.pos.y;//point on the circle, relative to the closest tile vert
-
-                if ((oy*signy) < 0)
+                var oy = obj.pos.y - t.pos.y;//point on the circle, relative to the closest tile vert   
+                    
+                if((oy*signy) < 0)
                 {
                     //we're colliding with the halfface
                     obj.reportCollisionVsWorld(x*oH, 0, oH, 0, t);
-
-                    return Phaser.Physics.Ninja.Circle.COL_AXIS;
+                    
+                    return Phaser.Physics.Ninja.Circle.COL_AXIS;            
                 }
                 else
                 {
@@ -4845,79 +4865,79 @@ Phaser.Physics.Ninja.Circle.prototype = {
 
                     var sx = t.sx;
                     var sy = t.sy;
-
+                                    
                     //if the component of (ox,oy) parallel to the normal's righthand normal
                     //has the same sign as the slope of the slope (the sign of the slope's slope is signx*signy)
                     //then we project by the slope, otherwise by the vertex.
-                    //note that this is simply a VERY tricky/weird method of determining
-                    //if the circle is in side the slope/face's voronio region, or that of the vertex.
+                    //note that this is simply a VERY tricky/weird method of determining 
+                    //if the circle is in side the slope/face's voronio region, or that of the vertex.                                            
                     var perp = (ox*-sy) + (oy*sx);
-                    if ((perp*signx*signy) < 0)
+                    if((perp*signx*signy) < 0)
                     {
                         //collide vs. vertex
                         var len = Math.sqrt(ox*ox + oy*oy);
                         var pen = obj.radius - len;
-                        if (0 < pen)
+                        if(0 < pen)
                         {
                             //note: if len=0, then perp=0 and we'll never reach here, so don't worry about div-by-0
                             ox /= len;
                             oy /= len;
-
+        
                             obj.reportCollisionVsWorld(ox*pen, oy*pen, ox, oy, t);
-
+                            
                             return Phaser.Physics.Ninja.Circle.COL_OTHER;
-                        }
+                        }                   
                     }
                     else
                     {
                         //collide vs. slope
-
+                            
                         //if the component of (ox,oy) parallel to the normal is less than the circle radius, we're
                         //penetrating the slope. note that this method of penetration calculation doesn't hold
                         //in general (i.e it won't work if the circle is in the slope), but works in this case
                         //because we know the circle is in a neighboring cell
                         var dp = (ox*sx) + (oy*sy);
                         var pen = obj.radius - Math.abs(dp);//note: we don't need the abs because we know the dp will be positive, but just in case..
-                        if (0 < pen)
+                        if(0 < pen)
                         {
                             //collision; circle out along normal by penetration amount
                             obj.reportCollisionVsWorld(sx*pen, sy*pen, t.sx, t.sy, t);
-
+                            
                             return Phaser.Physics.Ninja.Circle.COL_OTHER;
                         }
-                    }
+                    }   
                 }
             }
         }
         else
         {
             //colliding diagonally
-            if ( 0 < ((signx*oH) + (signy*oV)) )
+            if( 0 < ((signx*oH) + (signy*oV)) ) 
             {
                 //the dotprod of slope normal and cell offset is strictly positive,
                 //therefore obj is in the diagonal neighb pointed at by the normal.
-
+                
                 //collide vs slope
 
                 //we should really precalc this at compile time, but for now, fuck it
                 var slen = Math.sqrt(2*2 + 1*1);//the raw slope is (-2,-1)
                 var sx = (signx*1) / slen;//get slope _unit_ normal;
                 var sy = (signy*2) / slen;//raw RH normal is (1,-2)
-
+        
                 var r = obj.radius;
                 var ox = (obj.pos.x - (sx*r)) - (t.pos.x - (signx*t.xw));//this gives is the coordinates of the innermost
                 var oy = (obj.pos.y - (sy*r)) - (t.pos.y + (signy*t.yw));//point on the circle, relative to a point on the slope
-
+            
                 //if the dotprod of (ox,oy) and (sx,sy) is negative, the point on the circle is in the slope
                 //and we need toproject it out by the magnitude of the projection of (ox,oy) onto (sx,sy)
                 var dp = (ox*sx) + (oy*sy);
-
-                if (dp < 0)
+                        
+                if(dp < 0)
                 {
-                    //collision; project delta onto slope and use this to displace the object
+                    //collision; project delta onto slope and use this to displace the object   
                     //(sx,sy)*-dp is the projection vector
                     obj.reportCollisionVsWorld(-sx*dp, -sy*dp, t.sx, t.sy, t);
-
+                    
                     return Phaser.Physics.Ninja.Circle.COL_OTHER;
                 }
                 return Phaser.Physics.Ninja.Circle.COL_NONE;
@@ -4927,16 +4947,16 @@ Phaser.Physics.Ninja.Circle.prototype = {
                 //collide vs the appropriate vertex
                 var vx = t.pos.x + (oH*t.xw);
                 var vy = t.pos.y + (oV*t.yw);
-
-                var dx = obj.pos.x - vx;//calc vert->circle vector
+                
+                var dx = obj.pos.x - vx;//calc vert->circle vector      
                 var dy = obj.pos.y - vy;
-
+                
                 var len = Math.sqrt(dx*dx + dy*dy);
                 var pen = obj.radius - len;
-                if (0 < pen)
+                if(0 < pen)
                 {
                     //vertex is in the circle; project outward
-                    if (len === 0)
+                    if(len == 0)
                     {
                         //project out by 45deg
                         dx = oH / Math.SQRT2;
@@ -4952,10 +4972,10 @@ Phaser.Physics.Ninja.Circle.prototype = {
 
                     return Phaser.Physics.Ninja.Circle.COL_OTHER;
                 }
-
-            }
+                    
+            }       
         }
-
+        
         return Phaser.Physics.Ninja.Circle.COL_NONE;
     },
 
@@ -4981,48 +5001,47 @@ Phaser.Physics.Ninja.Circle.prototype = {
         //if obj is in this tile: collide vs slope or vertex or axis
         //if obj is vert neighb in direction of slope: collide vs. slope or vertex
         //if obj is vert neighb against the slope:
-        //   if (distance in y from circle to 90deg corner of tile < 1/2 tileheight, collide vs. face)
+        //   if(distance in y from circle to 90deg corner of tile < 1/2 tileheight, collide vs. face)
         //   else(collide vs. corner of slope) (vert collision with a non-grid-aligned vert)
         //if obj is horiz neighb against direction of slope: collide vs. face
 
         var signx = t.signx;
         var signy = t.signy;
 
-        if (0 < (signx*oH))
+        if(0 < (signx*oH))
         {
             //object will never collide vs tile, it can't reach that far
 
             return Phaser.Physics.Ninja.Circle.COL_NONE;
         }
-        else if (oH === 0)
+        else if(oH == 0)
         {
-            if (oV === 0)
+            if(oV == 0)
             {
                 //colliding with current tile
                 //we could only be colliding vs the slope OR a vertex
                 //look at the vector form the closest vert to the circle to decide
-
-                var lenP;
+        
                 var sx = t.sx;
                 var sy = t.sy;
-
+                
                 var r = obj.radius;
                 var ox = obj.pos.x - t.pos.x;//this gives is the coordinates of the innermost
-                var oy = obj.pos.y - (t.pos.y - (signy*t.yw));//point on the circle, relative to the tile corner
-
+                var oy = obj.pos.y - (t.pos.y - (signy*t.yw));//point on the circle, relative to the tile corner    
+            
                 //if the component of (ox,oy) parallel to the normal's righthand normal
                 //has the same sign as the slope of the slope (the sign of the slope's slope is signx*signy)
                 //then we project by the normal or axis, otherwise by the corner/vertex
-                //note that this is simply a VERY tricky/weird method of determining
+                //note that this is simply a VERY tricky/weird method of determining 
                 //if the circle is in side the slope/face's voronoi region, or that of the vertex.
-
+                    
                 var perp = (ox*-sy) + (oy*sx);
-                if ((perp*signx*signy) < 0)
+                if((perp*signx*signy) < 0)
                 {
                     //collide vs. vertex
                     var len = Math.sqrt(ox*ox + oy*oy);
                     var pen = r - len;
-                    if (0 < pen)
+                    if(0 < pen)
                     {
                         //note: if len=0, then perp=0 and we'll never reach here, so don't worry about div-by-0
                         ox /= len;
@@ -5030,99 +5049,99 @@ Phaser.Physics.Ninja.Circle.prototype = {
 
                         obj.reportCollisionVsWorld(ox*pen, oy*pen, ox, oy, t);
                         return Phaser.Physics.Ninja.Circle.COL_OTHER;
-                    }
+                    }                   
                 }
                 else
                 {
                     //collide vs. slope or vs axis
-                    ox -= r*sx;//this gives us the vector from
+                    ox -= r*sx;//this gives us the vector from  
                     oy -= r*sy;//a point on the slope to the innermost point on the circle
-
+            
                     //if the dotprod of (ox,oy) and (sx,sy) is negative, the point on the circle is in the slope
                     //and we need toproject it out by the magnitude of the projection of (ox,oy) onto (sx,sy)
                     var dp = (ox*sx) + (oy*sy);
-
-                    if (dp < 0)
+                    
+                    if(dp < 0)
                     {
                         //collision; project delta onto slope and use this to displace the object
                         sx *= -dp;//(sx,sy) is now the projection vector
-                        sy *= -dp;
-
+                        sy *= -dp;      
+                            
                         var lenN = Math.sqrt(sx*sx + sy*sy);
-
+                
                         //find the smallest axial projection vector
-                        if (x < y)
-                        {
+                        if(x < y)
+                        {                   
                             //penetration in x is smaller
                             lenP = x;
-                            y = 0;
-                            //get sign for projection along x-axis
-                            if ((obj.pos.x - t.pos.x) < 0)
+                            y = 0;  
+                            //get sign for projection along x-axis      
+                            if((obj.pos.x - t.pos.x) < 0)
                             {
                                 x *= -1;
                             }
                         }
                         else
-                        {
+                        {       
                             //penetration in y is smaller
                             lenP = y;
-                            x = 0;
-                            //get sign for projection along y-axis
-                            if ((obj.pos.y - t.pos.y)< 0)
+                            x = 0;  
+                            //get sign for projection along y-axis      
+                            if((obj.pos.y - t.pos.y)< 0)
                             {
                                 y *= -1;
-                            }
+                            }           
                         }
 
-                        if (lenP < lenN)
+                        if(lenP < lenN)
                         {
                             obj.reportCollisionVsWorld(x,y,x/lenP, y/lenP, t);
-
-                            return Phaser.Physics.Ninja.Circle.COL_AXIS;
+                            
+                            return Phaser.Physics.Ninja.Circle.COL_AXIS
                         }
                         else
-                        {
+                        {       
                             obj.reportCollisionVsWorld(sx,sy,t.sx,t.sy,t);
-
+                            
                             return Phaser.Physics.Ninja.Circle.COL_OTHER;
-                        }
+                        }   
                     }
                 }
-
+                
             }
             else
             {
                 //colliding vertically
-
-                if ((signy*oV) < 0)
+                
+                if((signy*oV) < 0)
                 {
                     //colliding with face/edge OR with corner of wedge, depending on our position vertically
-
+                        
                     //collide vs. vertex
                     //get diag vertex position
                     var vx = t.pos.x;
                     var vy = t.pos.y - (signy*t.yw);
-
-                    var dx = obj.pos.x - vx;//calc vert->circle vector
+                            
+                    var dx = obj.pos.x - vx;//calc vert->circle vector      
                     var dy = obj.pos.y - vy;
-
-                    if ((dx*signx) < 0)
-                    {
+                            
+                    if((dx*signx) < 0)
+                    {   
                         //colliding vs face
                         obj.reportCollisionVsWorld(0, y*oV, 0, oV, t);
-
-                        return Phaser.Physics.Ninja.Circle.COL_AXIS;
+                        
+                        return Phaser.Physics.Ninja.Circle.COL_AXIS;                    
                     }
                     else
                     {
                         //colliding vs. vertex
-
+                            
                         var len = Math.sqrt(dx*dx + dy*dy);
                         var pen = obj.radius - len;
-                        if (0 < pen)
+                        if(0 < pen)
                         {
                             //vertex is in the circle; project outward
-                            if (len === 0)
+                            if(len == 0)
                             {
                                 //project out by 45deg
                                 dx = oH / Math.SQRT2;
@@ -5133,9 +5152,9 @@ Phaser.Physics.Ninja.Circle.prototype = {
                                 dx /= len;
                                 dy /= len;
                             }
-
+                                
                             obj.reportCollisionVsWorld(dx*pen, dy*pen, dx, dy, t);
-
+                            
                             return Phaser.Physics.Ninja.Circle.COL_OTHER;
                         }
                     }
@@ -5144,68 +5163,68 @@ Phaser.Physics.Ninja.Circle.prototype = {
                 {
                     //we could only be colliding vs the slope OR a vertex
                     //look at the vector form the closest vert to the circle to decide
-
+            
                     var sx = t.sx;
                     var sy = t.sy;
-
+                        
                     var ox = obj.pos.x - (t.pos.x - (signx*t.xw));//this gives is the coordinates of the innermost
-                    var oy = obj.pos.y - (t.pos.y + (oV*t.yw));//point on the circle, relative to the closest tile vert
-
+                    var oy = obj.pos.y - (t.pos.y + (oV*t.yw));//point on the circle, relative to the closest tile vert 
+            
                     //if the component of (ox,oy) parallel to the normal's righthand normal
                     //has the same sign as the slope of the slope (the sign of the slope's slope is signx*signy)
                     //then we project by the vertex, otherwise by the normal.
-                    //note that this is simply a VERY tricky/weird method of determining
-                    //if the circle is in side the slope/face's voronio region, or that of the vertex.
+                    //note that this is simply a VERY tricky/weird method of determining 
+                    //if the circle is in side the slope/face's voronio region, or that of the vertex.                                            
                     var perp = (ox*-sy) + (oy*sx);
-                    if (0 < (perp*signx*signy))
+                    if(0 < (perp*signx*signy))
                     {
                         //collide vs. vertex
                         var len = Math.sqrt(ox*ox + oy*oy);
                         var pen = obj.radius - len;
-                        if (0 < pen)
+                        if(0 < pen)
                         {
                             //note: if len=0, then perp=0 and we'll never reach here, so don't worry about div-by-0
                             ox /= len;
                             oy /= len;
 
                             obj.reportCollisionVsWorld(ox*pen, oy*pen, ox, oy, t);
-
+                            
                             return Phaser.Physics.Ninja.Circle.COL_OTHER;
-                        }
+                        }                   
                     }
                     else
                     {
                         //collide vs. slope
-
+                                
                         //if the component of (ox,oy) parallel to the normal is less than the circle radius, we're
                         //penetrating the slope. note that this method of penetration calculation doesn't hold
                         //in general (i.e it won't work if the circle is in the slope), but works in this case
                         //because we know the circle is in a neighboring cell
                         var dp = (ox*sx) + (oy*sy);
-                        var pen = obj.radius - Math.abs(dp);//note: we don't need the abs because we know the dp will be positive, but just in case..
+                        var pen = obj.radius - Math.abs(dp);//note: we don't need the abs because we know the dp will be positive, but just in case..                
 
-                        if (0 < pen)
+                        if(0 < pen)
                         {
                             //collision; circle out along normal by penetration amount
                             obj.reportCollisionVsWorld(sx*pen, sy*pen, t.sx, t.sy, t);
-
+                            
                             return Phaser.Physics.Ninja.Circle.COL_OTHER;
                         }
                     }
                 }
-            }
+            }       
         }
-        else if (oV === 0)
+        else if(oV == 0)
         {
             //colliding horizontally; we can assume that (signy*oV) < 0
             //due to the first conditional far above
 
-            obj.reportCollisionVsWorld(x*oH, 0, oH, 0, t);
-
-            return Phaser.Physics.Ninja.Circle.COL_AXIS;
+                obj.reportCollisionVsWorld(x*oH, 0, oH, 0, t);
+                
+                return Phaser.Physics.Ninja.Circle.COL_AXIS;
         }
         else
-        {
+        {       
             //colliding diagonally; due to the first conditional above,
             //obj is vertically offset against slope, and offset in either direction horizontally
 
@@ -5213,16 +5232,16 @@ Phaser.Physics.Ninja.Circle.prototype = {
             //get diag vertex position
             var vx = t.pos.x + (oH*t.xw);
             var vy = t.pos.y + (oV*t.yw);
-
-            var dx = obj.pos.x - vx;//calc vert->circle vector
+                
+            var dx = obj.pos.x - vx;//calc vert->circle vector      
             var dy = obj.pos.y - vy;
-
+                
             var len = Math.sqrt(dx*dx + dy*dy);
             var pen = obj.radius - len;
-            if (0 < pen)
+            if(0 < pen)
             {
                 //vertex is in the circle; project outward
-                if (len === 0)
+                if(len == 0)
                 {
                     //project out by 45deg
                     dx = oH / Math.SQRT2;
@@ -5235,7 +5254,7 @@ Phaser.Physics.Ninja.Circle.prototype = {
                 }
 
                 obj.reportCollisionVsWorld(dx*pen, dy*pen, dx, dy, t);
-
+                
                 return Phaser.Physics.Ninja.Circle.COL_OTHER;
             }
         }
@@ -5273,76 +5292,75 @@ Phaser.Physics.Ninja.Circle.prototype = {
         var signx = t.signx;
         var signy = t.signy;
 
-        if (oH === 0)
+        if(oH == 0)
         {
-            if (oV === 0)
+            if(oV == 0)
             {
                 //colliding with current cell
 
-                var lenP;
                 var sx = t.sx;
                 var sy = t.sy;
-
+        
                 var r = obj.radius;
                 var ox = (obj.pos.x - (sx*r)) - (t.pos.x + (signx*t.xw));//this gives is the coordinates of the innermost
                 var oy = (obj.pos.y - (sy*r)) - (t.pos.y - (signy*t.yw));//point on the AABB, relative to a point on the slope
-
+            
                 //if the dotprod of (ox,oy) and (sx,sy) is negative, the point on the circle is in the slope
                 //and we need toproject it out by the magnitude of the projection of (ox,oy) onto (sx,sy)
                 var dp = (ox*sx) + (oy*sy);
-
-                if (dp < 0)
+                        
+                if(dp < 0)
                 {
                     //collision; project delta onto slope and use this to displace the object
                     sx *= -dp;//(sx,sy) is now the projection vector
-                    sy *= -dp;
-
+                    sy *= -dp;      
+                                
                     var lenN = Math.sqrt(sx*sx + sy*sy);
-
+                    
                     //find the smallest axial projection vector
-                    if (x < y)
-                    {
+                    if(x < y)
+                    {                   
                         //penetration in x is smaller
                         lenP = x;
-                        y = 0;
-                        //get sign for projection along x-axis
-                        if ((obj.pos.x - t.pos.x) < 0)
+                        y = 0;  
+                        //get sign for projection along x-axis      
+                        if((obj.pos.x - t.pos.x) < 0)
                         {
                             x *= -1;
                         }
                     }
                     else
-                    {
+                    {       
                         //penetration in y is smaller
                         lenP = y;
-                        x = 0;
-                        //get sign for projection along y-axis
-                        if ((obj.pos.y - t.pos.y)< 0)
+                        x = 0;  
+                        //get sign for projection along y-axis      
+                        if((obj.pos.y - t.pos.y)< 0)
                         {
                             y *= -1;
-                        }
+                        }           
                     }
-
-                    if (lenP < lenN)
+        
+                    if(lenP < lenN)
                     {
                         obj.reportCollisionVsWorld(x,y,x/lenP, y/lenP, t);
-
+                        
                         return Phaser.Physics.Ninja.Circle.COL_AXIS;
                     }
                     else
                     {
                         obj.reportCollisionVsWorld(sx, sy, t.sx, t.sy, t);
-
+                        
                         return Phaser.Physics.Ninja.Circle.COL_OTHER;
                     }
-
-                }
+        
+                }                   
             }
             else
             {
                 //colliding vertically
-
-                if ((signy*oV) < 0)
+            
+                if((signy*oV) < 0)
                 {
                     //colliding with face/edge
                     obj.reportCollisionVsWorld(0, y*oV, 0, oV, t);
@@ -5352,16 +5370,16 @@ Phaser.Physics.Ninja.Circle.prototype = {
                 else
                 {
                     //colliding with edge, slope, or vertex
-
+                
                     var ox = obj.pos.x - t.pos.x;//this gives is the coordinates of the innermost
-                    var oy = obj.pos.y - (t.pos.y + (signy*t.yw));//point on the circle, relative to the closest tile vert
-
-                    if ((ox*signx) < 0)
+                    var oy = obj.pos.y - (t.pos.y + (signy*t.yw));//point on the circle, relative to the closest tile vert  
+                        
+                    if((ox*signx) < 0)
                     {
                         //we're colliding with the halfface
                         obj.reportCollisionVsWorld(0, y*oV, 0, oV, t);
 
-                        return Phaser.Physics.Ninja.Circle.COL_AXIS;
+                        return Phaser.Physics.Ninja.Circle.COL_AXIS;            
                     }
                     else
                     {
@@ -5369,60 +5387,60 @@ Phaser.Physics.Ninja.Circle.prototype = {
 
                         var sx = t.sx;
                         var sy = t.sy;
-
+                                        
                         //if the component of (ox,oy) parallel to the normal's righthand normal
                         //has the same sign as the slope of the slope (the sign of the slope's slope is signx*signy)
                         //then we project by the vertex, otherwise by the slope.
-                        //note that this is simply a VERY tricky/weird method of determining
-                        //if the circle is in side the slope/face's voronio region, or that of the vertex.
+                        //note that this is simply a VERY tricky/weird method of determining 
+                        //if the circle is in side the slope/face's voronio region, or that of the vertex.                                            
                         var perp = (ox*-sy) + (oy*sx);
-                        if (0 < (perp*signx*signy))
+                        if(0 < (perp*signx*signy))
                         {
                             //collide vs. vertex
                             var len = Math.sqrt(ox*ox + oy*oy);
                             var pen = obj.radius - len;
-                            if (0 < pen)
+                            if(0 < pen)
                             {
                                 //note: if len=0, then perp=0 and we'll never reach here, so don't worry about div-by-0
                                 ox /= len;
                                 oy /= len;
-
+            
                                 obj.reportCollisionVsWorld(ox*pen, oy*pen, ox, oy, t);
-
+                                
                                 return Phaser.Physics.Ninja.Circle.COL_OTHER;
-                            }
+                            }                   
                         }
                         else
                         {
                             //collide vs. slope
-
+                                
                             //if the component of (ox,oy) parallel to the normal is less than the circle radius, we're
                             //penetrating the slope. note that this method of penetration calculation doesn't hold
                             //in general (i.e it won't work if the circle is in the slope), but works in this case
                             //because we know the circle is in a neighboring cell
                             var dp = (ox*sx) + (oy*sy);
                             var pen = obj.radius - Math.abs(dp);//note: we don't need the abs because we know the dp will be positive, but just in case..
-                            if (0 < pen)
+                            if(0 < pen)
                             {
                                 //collision; circle out along normal by penetration amount
                                 obj.reportCollisionVsWorld(sx*pen, sy*pen, sx, sy, t);
-
+                                
                                 return Phaser.Physics.Ninja.Circle.COL_OTHER;
                             }
-                        }
+                        }   
                     }
                 }
             }
         }
-        else if (oV === 0)
+        else if(oV == 0)
         {
             //colliding horizontally
-
-            if ((signx*oH) < 0)
+                
+            if((signx*oH) < 0)
             {
                 //colliding with face/edge
                 obj.reportCollisionVsWorld(x*oH, 0, oH, 0, t);
-
+                
                 return Phaser.Physics.Ninja.Circle.COL_AXIS;
             }
             else
@@ -5433,47 +5451,47 @@ Phaser.Physics.Ninja.Circle.prototype = {
                 var slen = Math.sqrt(2*2 + 1*1);//the raw slope is (-2,-1)
                 var sx = (signx*2) / slen;//get slope _unit_ normal;
                 var sy = (signy*1) / slen;//raw RH normal is (1,-2)
-
+                    
                 var ox = obj.pos.x - (t.pos.x + (signx*t.xw));//this gives is the coordinates of the innermost
-                var oy = obj.pos.y - (t.pos.y - (signy*t.yw));//point on the circle, relative to the closest tile vert
+                var oy = obj.pos.y - (t.pos.y - (signy*t.yw));//point on the circle, relative to the closest tile vert  
 
                 //if the component of (ox,oy) parallel to the normal's righthand normal
                 //has the same sign as the slope of the slope (the sign of the slope's slope is signx*signy)
                 //then we project by the slope, otherwise by the vertex.
-                //note that this is simply a VERY tricky/weird method of determining
-                //if the circle is in side the slope/face's voronio region, or that of the vertex.
+                //note that this is simply a VERY tricky/weird method of determining 
+                //if the circle is in side the slope/face's voronio region, or that of the vertex.                                            
                 var perp = (ox*-sy) + (oy*sx);
-                if ((perp*signx*signy) < 0)
+                if((perp*signx*signy) < 0)
                 {
                     //collide vs. vertex
                     var len = Math.sqrt(ox*ox + oy*oy);
                     var pen = obj.radius - len;
-                    if (0 < pen)
+                    if(0 < pen)
                     {
                         //note: if len=0, then perp=0 and we'll never reach here, so don't worry about div-by-0
                         ox /= len;
                         oy /= len;
 
                         obj.reportCollisionVsWorld(ox*pen, oy*pen, ox, oy, t);
-
+                        
                         return Phaser.Physics.Ninja.Circle.COL_OTHER;
-                    }
+                    }                   
                 }
                 else
                 {
                     //collide vs. slope
-
+                        
                     //if the component of (ox,oy) parallel to the normal is less than the circle radius, we're
                     //penetrating the slope. note that this method of penetration calculation doesn't hold
                     //in general (i.e it won't work if the circle is in the slope), but works in this case
                     //because we know the circle is in a neighboring cell
                     var dp = (ox*sx) + (oy*sy);
                     var pen = obj.radius - Math.abs(dp);//note: we don't need the abs because we know the dp will be positive, but just in case..
-                    if (0 < pen)
+                    if(0 < pen)
                     {
                         //collision; circle out along normal by penetration amount
                         obj.reportCollisionVsWorld(sx*pen, sy*pen, t.sx, t.sy, t);
-
+                        
                         return Phaser.Physics.Ninja.Circle.COL_OTHER;
                     }
                 }
@@ -5482,27 +5500,27 @@ Phaser.Physics.Ninja.Circle.prototype = {
         else
         {
             //colliding diagonally
-            if ( 0 < ((signx*oH) + (signy*oV)) )
+            if( 0 < ((signx*oH) + (signy*oV)) ) 
             {
                 //the dotprod of slope normal and cell offset is strictly positive,
                 //therefore obj is in the diagonal neighb pointed at by the normal.
-
+                
                 //collide vs slope
 
                 var sx = t.sx;
                 var sy = t.sy;
-
+        
                 var r = obj.radius;
                 var ox = (obj.pos.x - (sx*r)) - (t.pos.x + (signx*t.xw));//this gives is the coordinates of the innermost
                 var oy = (obj.pos.y - (sy*r)) - (t.pos.y - (signy*t.yw));//point on the circle, relative to a point on the slope
-
+            
                 //if the dotprod of (ox,oy) and (sx,sy) is negative, the point on the circle is in the slope
                 //and we need toproject it out by the magnitude of the projection of (ox,oy) onto (sx,sy)
                 var dp = (ox*sx) + (oy*sy);
-
-                if (dp < 0)
+                        
+                if(dp < 0)
                 {
-                    //collision; project delta onto slope and use this to displace the object
+                    //collision; project delta onto slope and use this to displace the object   
                     //(sx,sy)*-dp is the projection vector
 
                     obj.reportCollisionVsWorld(-sx*dp, -sy*dp, t.sx, t.sy, t);
@@ -5513,20 +5531,20 @@ Phaser.Physics.Ninja.Circle.prototype = {
             }
             else
             {
-
+                
                 //collide vs the appropriate vertex
                 var vx = t.pos.x + (oH*t.xw);
                 var vy = t.pos.y + (oV*t.yw);
-
-                var dx = obj.pos.x - vx;//calc vert->circle vector
+                
+                var dx = obj.pos.x - vx;//calc vert->circle vector      
                 var dy = obj.pos.y - vy;
-
+                
                 var len = Math.sqrt(dx*dx + dy*dy);
                 var pen = obj.radius - len;
-                if (0 < pen)
+                if(0 < pen)
                 {
                     //vertex is in the circle; project outward
-                    if (len === 0)
+                    if(len == 0)
                     {
                         //project out by 45deg
                         dx = oH / Math.SQRT2;
@@ -5542,21 +5560,11 @@ Phaser.Physics.Ninja.Circle.prototype = {
 
                     return Phaser.Physics.Ninja.Circle.COL_OTHER;
                 }
-
-            }
+                    
+            }       
         }
-
+        
         return Phaser.Physics.Ninja.Circle.COL_NONE;
-    },
-
-    /**
-    * Destroys this Circle's reference to Body and System
-    *
-    * @method Phaser.Physics.Ninja.Circle#destroy
-    */
-    destroy: function() {
-        this.body = null;
-        this.system = null;
     }
 
-};
+}

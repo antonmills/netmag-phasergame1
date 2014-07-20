@@ -17,7 +17,7 @@ Phaser.Mouse = function (game) {
     * @property {Phaser.Game} game - A reference to the currently running game.
     */
     this.game = game;
-
+    
     /**
     * @property {Object} callbackContext - The context under which callbacks are called.
     */
@@ -27,12 +27,12 @@ Phaser.Mouse = function (game) {
     * @property {function} mouseDownCallback - A callback that can be fired when the mouse is pressed down.
     */
     this.mouseDownCallback = null;
-
+    
     /**
     * @property {function} mouseMoveCallback - A callback that can be fired when the mouse is moved while pressed down.
     */
     this.mouseMoveCallback = null;
-
+    
     /**
     * @property {function} mouseUpCallback - A callback that can be fired when the mouse is released from a pressed down state.
     */
@@ -125,19 +125,13 @@ Phaser.Mouse.prototype = {
     */
     start: function () {
 
+        var _this = this;
+
         if (this.game.device.android && this.game.device.chrome === false)
         {
             //  Android stock browser fires mouse events even if you preventDefault on the touchStart, so ...
             return;
         }
-
-        if (this._onMouseDown !== null)
-        {
-            //  Avoid setting multiple listeners
-            return;
-        }
-
-        var _this = this;
 
         this._onMouseDown = function (event) {
             return _this.onMouseDown(event);

@@ -166,29 +166,57 @@ Phaser.Tilemap.TILED_JSON = 1;
 Phaser.Tilemap.prototype = {
 
     /**
-    * Creates an empty map of the given dimensions and one blank layer. If layers already exist they are erased.
+    * Creates an empty map of the given dimensions.
     *
     * @method Phaser.Tilemap#create
-    * @param {string} name - The name of the default layer of the map.
+    * @param {string} name - The name of the default layer of the map
     * @param {number} width - The width of the map in tiles.
     * @param {number} height - The height of the map in tiles.
     * @param {number} tileWidth - The width of the tiles the map uses for calculations.
     * @param {number} tileHeight - The height of the tiles the map uses for calculations.
-    * @param {Phaser.Group} [group] - Optional Group to add the layer to. If not specified it will be added to the World group.
-    * @return {Phaser.TilemapLayer} The TilemapLayer object. This is an extension of Phaser.Image and can be moved around the display list accordingly.
     */
-    create: function (name, width, height, tileWidth, tileHeight, group) {
-
-        if (typeof group === 'undefined') { group = this.game.world; }
+    create: function (name, width, height, tileWidth, tileHeight) {
 
         this.width = width;
         this.height = height;
 
         this.setTileSize(tileWidth, tileHeight);
 
-        this.layers.length = 0;
+        var row;
+        var output = [];
 
-        return this.createBlankLayer(name, width, height, tileWidth, tileHeight, group);
+        for (var y = 0; y < height; y++)
+        {
+            row = [];
+
+            for (var x = 0; x < width; x++)
+            {
+                row.push(null);
+            }
+
+            output.push(row);
+        }
+
+        this.layers.push({
+
+            name: name,
+            x: 0,
+            y: 0,
+            width: width,
+            height: height,
+            widthInPixels: this.widthInPixels,
+            heightInPixels: this.heightInPixels,
+            alpha: 1,
+            visible: true,
+            properties: {},
+            indexes: [],
+            callbacks: [],
+            bodies: [],
+            data: output
+
+        });
+
+        this.currentLayer = this.layers.length - 1;
 
     },
 
@@ -215,12 +243,11 @@ Phaser.Tilemap.prototype = {
     * @method Phaser.Tilemap#addTilesetImage
     * @param {string} tileset - The name of the tileset as specified in the map data.
     * @param {string} [key] - The key of the Phaser.Cache image used for this tileset. If not specified it will look for an image with a key matching the tileset parameter.
-    * @param {number} [tileWidth=32] - The width of the tiles in the Tileset Image. If not given it will default to the map.tileWidth value, if that isn't set then 32.
-    * @param {number} [tileHeight=32] - The height of the tiles in the Tileset Image. If not given it will default to the map.tileHeight value, if that isn't set then 32.
+    * @param {number} [tileWidth] - The width of the tiles in the Tileset Image. If not given it will default to the map.tileWidth value.
+    * @param {number} [tileHeight] - The height of the tiles in the Tileset Image. If not given it will default to the map.tileHeight value.
     * @param {number} [tileMargin=0] - The width of the tiles in the Tileset Image. If not given it will default to the map.tileWidth value.
     * @param {number} [tileSpacing=0] - The height of the tiles in the Tileset Image. If not given it will default to the map.tileHeight value.
     * @param {number} [gid=0] - If adding multiple tilesets to a blank/dynamic map, specify the starting GID the set will use here.
-    * @return {Phaser.Tileset} Returns the Tileset object that was created or updated, or null if it failed.
     */
     addTilesetImage: function (tileset, key, tileWidth, tileHeight, tileMargin, tileSpacing, gid) {
 
@@ -230,17 +257,6 @@ Phaser.Tilemap.prototype = {
         if (typeof tileSpacing === 'undefined') { tileSpacing = 0; }
         if (typeof gid === 'undefined') { gid = 0; }
 
-        //  In-case we're working from a blank map
-        if (tileWidth === 0)
-        {
-            tileWidth = 32;
-        }
-
-        if (tileHeight === 0)
-        {
-            tileHeight = 32;
-        }
-
         if (typeof key === 'undefined')
         {
             if (typeof tileset === 'string')
@@ -249,7 +265,7 @@ Phaser.Tilemap.prototype = {
             }
             else
             {
-                return null;
+                return false;
             }
         }
 
@@ -261,7 +277,7 @@ Phaser.Tilemap.prototype = {
         if (this.tilesets[tileset])
         {
             this.tilesets[tileset].setImage(this.game.cache.getImage(key));
-            return this.tilesets[tileset];
+            return true;
         }
         else
         {
@@ -302,45 +318,41 @@ Phaser.Tilemap.prototype = {
                     countX = 0;
                     countY++;
 
-                    if (countY === newSet.rows)
+                    if (countY === set.rows)
                     {
                         break;
                     }
                 }
             }
 
-            return newSet;
-
         }
 
-        return null;
+        return false;
 
     },
 
     /**
     * Creates a Sprite for every object matching the given gid in the map data. You can optionally specify the group that the Sprite will be created in. If none is
     * given it will be created in the World. All properties from the map data objectgroup are copied across to the Sprite, so you can use this as an easy way to
-    * configure Sprite properties from within the map editor. For example giving an object a property of alpha: 0.5 in the map editor will duplicate that when the
+    * configure Sprite properties from within the map editor. For example giving an object a property if alpha: 0.5 in the map editor will duplicate that when the
     * Sprite is created. You could also give it a value like: body.velocity.x: 100 to set it moving automatically.
     *
     * @method Phaser.Tilemap#createFromObjects
     * @param {string} name - The name of the Object Group to create Sprites from.
-    * @param {number} gid - The layer array index value, or if a string is given the layer name within the map data.
+    * @param {number} gid - The layer array index value, or if a string is given the layer name, within the map data that this TilemapLayer represents.
     * @param {string} key - The Game.cache key of the image that this Sprite will use.
     * @param {number|string} [frame] - If the Sprite image contains multiple frames you can specify which one to use here.
     * @param {boolean} [exists=true] - The default exists state of the Sprite.
     * @param {boolean} [autoCull=false] - The default autoCull state of the Sprite. Sprites that are autoCulled are culled from the camera if out of its range.
     * @param {Phaser.Group} [group=Phaser.World] - Group to add the Sprite to. If not specified it will be added to the World group.
     * @param {object} [CustomClass=Phaser.Sprite] - If you wish to create your own class, rather than Phaser.Sprite, pass the class here. Your class must extend Phaser.Sprite and have the same constructor parameters.
-    * @param {boolean} [adjustY=true] - By default the Tiled map editor uses a bottom-left coordinate system. Phaser uses top-left. So most objects will appear too low down. This parameter moves them up by their height.
     */
-    createFromObjects: function (name, gid, key, frame, exists, autoCull, group, CustomClass, adjustY) {
+    createFromObjects: function (name, gid, key, frame, exists, autoCull, group, CustomClass) {
 
         if (typeof exists === 'undefined') { exists = true; }
         if (typeof autoCull === 'undefined') { autoCull = false; }
         if (typeof group === 'undefined') { group = this.game.world; }
         if (typeof CustomClass === 'undefined') { CustomClass = Phaser.Sprite; }
-        if (typeof adjustY === 'undefined') { adjustY = true; }
 
         if (!this.objects[name])
         {
@@ -356,15 +368,11 @@ Phaser.Tilemap.prototype = {
             {
                 sprite = new CustomClass(this.game, this.objects[name][i].x, this.objects[name][i].y, key, frame);
 
+                sprite.anchor.setTo(0, 1);
                 sprite.name = this.objects[name][i].name;
                 sprite.visible = this.objects[name][i].visible;
                 sprite.autoCull = autoCull;
                 sprite.exists = exists;
-
-                if (adjustY)
-                {
-                    sprite.y -= sprite.height;
-                }
 
                 group.add(sprite);
 
@@ -381,7 +389,6 @@ Phaser.Tilemap.prototype = {
     * Creates a new TilemapLayer object. By default TilemapLayers are fixed to the camera.
     * The `layer` parameter is important. If you've created your map in Tiled then you can get this by looking in Tiled and looking at the Layer name.
     * Or you can open the JSON file it exports and look at the layers[].name value. Either way it must match.
-    * If you wish to create a blank layer to put your own tiles on then see Tilemap.createBlankLayer.
     *
     * @method Phaser.Tilemap#createLayer
     * @param {number|string} layer - The layer array index value, or if a string is given the layer name, within the map data that this TilemapLayer represents.
@@ -412,86 +419,6 @@ Phaser.Tilemap.prototype = {
         }
 
         return group.add(new Phaser.TilemapLayer(this.game, this, index, width, height));
-
-    },
-
-    /**
-    * Creates a new and empty layer on this Tilemap. By default TilemapLayers are fixed to the camera.
-    *
-    * @method Phaser.Tilemap#createLayer
-    * @param {string} name - The name of this layer. Must be unique within the map.
-    * @param {number} width - The width of the layer in tiles.
-    * @param {number} height - The height of the layer in tiles.
-    * @param {number} tileWidth - The width of the tiles the layer uses for calculations.
-    * @param {number} tileHeight - The height of the tiles the layer uses for calculations.
-    * @param {Phaser.Group} [group] - Optional Group to add the layer to. If not specified it will be added to the World group.
-    * @return {Phaser.TilemapLayer} The TilemapLayer object. This is an extension of Phaser.Image and can be moved around the display list accordingly.
-    */
-    createBlankLayer: function (name, width, height, tileWidth, tileHeight, group) {
-
-        if (typeof group === 'undefined') { group = this.game.world; }
-
-        if (this.getLayerIndex(name) !== null)
-        {
-            console.warn('Tilemap.createBlankLayer: Layer with matching name already exists');
-            return;
-        }
-
-        var row;
-        var output = [];
-
-        for (var y = 0; y < height; y++)
-        {
-            row = [];
-
-            for (var x = 0; x < width; x++)
-            {
-                row.push(null);
-            }
-
-            output.push(row);
-        }
-
-        var layer = {
-
-            name: name,
-            x: 0,
-            y: 0,
-            width: width,
-            height: height,
-            widthInPixels: width * tileWidth,
-            heightInPixels: height * tileHeight,
-            alpha: 1,
-            visible: true,
-            properties: {},
-            indexes: [],
-            callbacks: [],
-            bodies: [],
-            data: output
-
-        };
-
-        this.layers.push(layer);
-
-        this.currentLayer = this.layers.length - 1;
-
-        var w = layer.widthInPixels;
-        var h = layer.heightInPixels;
-
-        if (w > this.game.width)
-        {
-            w = this.game.width;
-        }
-
-        if (h > this.game.height)
-        {
-            h = this.game.height;
-        }
-
-        var output = new Phaser.TilemapLayer(this.game, this, this.layers.length - 1, w, h);
-        output.name = name;
-
-        return group.add(output);
 
     },
 
@@ -588,7 +515,7 @@ Phaser.Tilemap.prototype = {
         if (typeof indexes === 'number')
         {
             //  This may seem a bit wasteful, because it will cause empty array elements to be created, but the look-up cost is much
-            //  less than having to iterate through the callbacks array hunting down tile indexes each frame, so I'll take the small memory hit.
+            //  less than having to iterate through the callbacks array hunting down tile indexes each time, so I'll take the small memory hit.
             this.layers[layer].callbacks[indexes] = { callback: callback, callbackContext: callbackContext };
         }
         else
@@ -758,7 +685,7 @@ Phaser.Tilemap.prototype = {
             }
         }
 
-        for (var y = 0; y < this.layers[layer].height; y++)
+        for (var y = 0; y < this.layers[layer].height ; y++)
         {
             for (var x = 0; x < this.layers[layer].width; x++)
             {
@@ -1008,7 +935,6 @@ Phaser.Tilemap.prototype = {
     * @param {number} x - X position to place the tile (given in tile units, not pixels)
     * @param {number} y - Y position to place the tile (given in tile units, not pixels)
     * @param {number|string|Phaser.TilemapLayer} [layer] - The layer to modify.
-    * @return {Phaser.Tile} The Tile object that was created or added to this map.
     */
     putTile: function (tile, x, y, layer) {
 
@@ -1041,7 +967,7 @@ Phaser.Tilemap.prototype = {
                 }
                 else
                 {
-                    this.layers[layer].data[y][x] = new Phaser.Tile(this.layers[layer], index, x, y, this.tileWidth, this.tileHeight);
+                    this.layers[layer].data[y][x] = new Phaser.Tile(layer, index, x, y, this.tileWidth, this.tileHeight);
                 }
             }
 
@@ -1054,14 +980,10 @@ Phaser.Tilemap.prototype = {
                 this.layers[layer].data[y][x].resetCollision();
             }
 
-            this.layers[layer].dirty = true;
+			this.layers[layer].dirty = true;
 
             this.calculateFaces(layer);
-
-            return this.layers[layer].data[y][x];
         }
-
-        return null;
 
     },
 
@@ -1180,7 +1102,7 @@ Phaser.Tilemap.prototype = {
 
         this._results.length = 0;
 
-        this._results.push({ x: x, y: y, width: width, height: height, layer: layer });
+        this._results.push( { x: x, y: y, width: width, height: height, layer: layer });
 
         for (var ty = y; ty < y + height; ty++)
         {
@@ -1207,7 +1129,7 @@ Phaser.Tilemap.prototype = {
 
         if (typeof x === "undefined") { x = 0; }
         if (typeof y === "undefined") { y = 0; }
-
+        
         layer = this.getLayer(layer);
 
         if (!tileblock || tileblock.length < 2)

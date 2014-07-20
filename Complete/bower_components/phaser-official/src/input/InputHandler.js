@@ -18,7 +18,7 @@ Phaser.InputHandler = function (sprite) {
     this.sprite = sprite;
 
     /**
-    * @property {Phaser.Game} game - A reference to the currently running game.
+    * @property {Phaser.Game} game - A reference to the currently running game. 
     */
     this.game = sprite.game;
 
@@ -33,37 +33,31 @@ Phaser.InputHandler = function (sprite) {
     * @default
     */
     this.priorityID = 0;
-
+    
     /**
     * @property {boolean} useHandCursor - On a desktop browser you can set the 'hand' cursor to appear when moving over the Sprite.
     * @default
     */
     this.useHandCursor = false;
-
-    /**
-    * @property {boolean} _setHandCursor - Did this Sprite trigger the hand cursor?
-    * @private
-    */
-    this._setHandCursor = false;
-
+    
     /**
     * @property {boolean} isDragged - true if the Sprite is being currently dragged.
     * @default
     */
     this.isDragged = false;
-
+    
     /**
     * @property {boolean} allowHorizontalDrag - Controls if the Sprite is allowed to be dragged horizontally.
     * @default
     */
     this.allowHorizontalDrag = true;
-
+    
     /**
     * @property {boolean} allowVerticalDrag - Controls if the Sprite is allowed to be dragged vertically.
     * @default
     */
     this.allowVerticalDrag = true;
-
+    
     /**
     * @property {boolean} bringToTop - If true when this Sprite is clicked or dragged it will automatically be bought to the top of the Group it is within.
     * @default
@@ -75,25 +69,25 @@ Phaser.InputHandler = function (sprite) {
     * @default
     */
     this.snapOffset = null;
-
+    
     /**
     * @property {boolean} snapOnDrag - When the Sprite is dragged this controls if the center of the Sprite will snap to the pointer on drag or not.
     * @default
     */
     this.snapOnDrag = false;
-
+    
     /**
     * @property {boolean} snapOnRelease - When the Sprite is dragged this controls if the Sprite will be snapped on release.
     * @default
     */
     this.snapOnRelease = false;
-
+    
     /**
     * @property {number} snapX - When a Sprite has snapping enabled this holds the width of the snap grid.
     * @default
     */
     this.snapX = 0;
-
+    
     /**
     * @property {number} snapY - When a Sprite has snapping enabled this holds the height of the snap grid.
     * @default
@@ -105,7 +99,7 @@ Phaser.InputHandler = function (sprite) {
     * @default
     */
     this.snapOffsetX = 0;
-
+    
     /**
     * @property {number} snapOffsetY - This defines the top-left Y coordinate of the snap grid..
     * @default
@@ -138,13 +132,13 @@ Phaser.InputHandler = function (sprite) {
 
     /**
     * @property {boolean} draggable - Is this sprite allowed to be dragged by the mouse? true = yes, false = no
-    * @default
+    * @default 
     */
     this.draggable = false;
 
     /**
     * @property {Phaser.Rectangle} boundsRect - A region of the game world within which the sprite is restricted during drag.
-    * @default
+    * @default 
     */
     this.boundsRect = null;
 
@@ -308,12 +302,6 @@ Phaser.InputHandler.prototype = {
 
         if (this.enabled)
         {
-            if (this._setHandCursor)
-            {
-                this.game.canvas.style.cursor = "default";
-                this._setHandCursor = false;
-            }
-
             this.enabled = false;
 
             this.game.input.interactiveItems.remove(this);
@@ -323,37 +311,6 @@ Phaser.InputHandler.prototype = {
             this.boundsSprite = null;
             this.sprite = null;
         }
-
-    },
-
-    /**
-    * Checks if the object this InputHandler is bound to is valid for consideration in the Pointer move event.
-    * This is called by Phaser.Pointer and shouldn't typically be called directly.
-    *
-    * @method Phaser.InputHandler#validForInput
-    * @protected
-    * @param {number} highestID - The highest ID currently processed by the Pointer.
-    * @param {number} highestRenderID - The highest Render Order ID currently processed by the Pointer.
-    * @return {boolean} True if the object this InputHandler is bound to should be considered as valid for input detection.
-    */
-    validForInput: function (highestID, highestRenderID) {
-
-        if (this.sprite.scale.x === 0 || this.sprite.scale.y === 0)
-        {
-            return false;
-        }
-
-        if (this.pixelPerfectClick || this.pixelPerfectOver)
-        {
-            return true;
-        }
-
-        if (this.priorityID > highestID || (this.priorityID === highestID && this.sprite._cache[3] < highestRenderID))
-        {
-            return true;
-        }
-
-        return false;
 
     },
 
@@ -644,7 +601,7 @@ Phaser.InputHandler.prototype = {
             y += this.sprite.texture.frame.y;
 
             this.game.input.hitContext.drawImage(this.sprite.texture.baseTexture.source, x, y, 1, 1, 0, 0, 1, 1);
-
+            
             var rgb = this.game.input.hitContext.getImageData(0, 0, 1, 1);
 
             if (rgb.data[3] >= this.pixelPerfectAlpha)
@@ -722,7 +679,6 @@ Phaser.InputHandler.prototype = {
             if (this.useHandCursor && this._pointerData[pointer.id].isDragged === false)
             {
                 this.game.canvas.style.cursor = "pointer";
-                this._setHandCursor = false;
             }
 
             this.sprite.events.onInputOver.dispatch(this.sprite, pointer);
@@ -751,7 +707,6 @@ Phaser.InputHandler.prototype = {
         if (this.useHandCursor && this._pointerData[pointer.id].isDragged === false)
         {
             this.game.canvas.style.cursor = "default";
-            this._setHandCursor = false;
         }
 
         if (this.sprite && this.sprite.events)
@@ -841,7 +796,6 @@ Phaser.InputHandler.prototype = {
                 if (this.useHandCursor)
                 {
                     this.game.canvas.style.cursor = "default";
-                    this._setHandCursor = false;
                 }
             }
 
@@ -1118,9 +1072,7 @@ Phaser.InputHandler.prototype = {
         {
             if (this.dragFromCenter)
             {
-                var bounds = this.sprite.getBounds();
-                this.sprite.x = pointer.x + (this.sprite.x - bounds.centerX);
-                this.sprite.y = pointer.y + (this.sprite.y - bounds.centerY);
+                this.sprite.centerOn(pointer.x, pointer.y);
                 this._dragPoint.setTo(this.sprite.x - pointer.x, this.sprite.y - pointer.y);
             }
             else
@@ -1130,7 +1082,7 @@ Phaser.InputHandler.prototype = {
         }
 
         this.updateDrag(pointer);
-
+        
         if (this.bringToTop)
         {
             this.sprite.bringToTop();
@@ -1150,7 +1102,7 @@ Phaser.InputHandler.prototype = {
         this.isDragged = false;
         this._draggedPointerID = -1;
         this._pointerData[pointer.id].isDragged = false;
-
+        
         if (this.snapOnRelease)
         {
             if (this.sprite.fixedToCamera)

@@ -1,4 +1,3 @@
-/* jshint wsh:true */
 /**
 * @author       Richard Davey <rich@photonstorm.com>
 * @copyright    2014 Photon Storm Ltd.
@@ -98,17 +97,17 @@ Phaser.Loader = function (game) {
     * @property {Phaser.Signal} onFileComplete - Event signal.
     */
     this.onFileComplete = new Phaser.Signal();
-
+    
     /**
     * @property {Phaser.Signal} onFileError - Event signal.
     */
     this.onFileError = new Phaser.Signal();
-
+    
     /**
     * @property {Phaser.Signal} onLoadStart - Event signal.
     */
     this.onLoadStart = new Phaser.Signal();
-
+    
     /**
     * @property {Phaser.Signal} onLoadComplete - Event signal.
     */
@@ -148,27 +147,27 @@ Phaser.Loader.prototype = {
     * This allows you to easily make loading bars for games. Note that Sprite.visible = true will be set when calling this.
     *
     * @method Phaser.Loader#setPreloadSprite
-    * @param {Phaser.Sprite|Phaser.Image} sprite - The sprite or image that will be cropped during the load.
-    * @param {number} [direction=0] - A value of zero means the sprite will be cropped horizontally, a value of 1 means its will be cropped vertically.
+    * @param {Phaser.Sprite|Phaser.Image} sprite - The sprite that will be cropped during the load.
+    * @param {number} [direction=0] - A value of zero means the sprite width will be cropped, a value of 1 means its height will be cropped.
     */
     setPreloadSprite: function (sprite, direction) {
 
         direction = direction || 0;
 
-        this.preloadSprite = { sprite: sprite, direction: direction, width: sprite.width, height: sprite.height, rect: null };
+        this.preloadSprite = { sprite: sprite, direction: direction, width: sprite.width, height: sprite.height, crop: null };
 
         if (direction === 0)
         {
-            //  Horizontal rect
-            this.preloadSprite.rect = new Phaser.Rectangle(0, 0, 1, sprite.height);
+            //  Horizontal crop
+            this.preloadSprite.crop = new Phaser.Rectangle(0, 0, 1, sprite.height);
         }
         else
         {
-            //  Vertical rect
-            this.preloadSprite.rect = new Phaser.Rectangle(0, 0, sprite.width, 1);
+            //  Vertical crop
+            this.preloadSprite.crop = new Phaser.Rectangle(0, 0, sprite.width, 1);
         }
 
-        sprite.crop(this.preloadSprite.rect);
+        sprite.crop(this.preloadSprite.crop);
 
         sprite.visible = true;
 
@@ -196,7 +195,7 @@ Phaser.Loader.prototype = {
         }
 
         return false;
-
+        
     },
 
     /**
@@ -221,7 +220,7 @@ Phaser.Loader.prototype = {
         }
 
         return -1;
-
+        
     },
 
     /**
@@ -246,7 +245,7 @@ Phaser.Loader.prototype = {
         }
 
         return false;
-
+        
     },
 
     /**
@@ -1164,10 +1163,10 @@ Phaser.Loader.prototype = {
 
                     if (file.autoDecode)
                     {
+                        this.game.cache.updateSound(key, 'isDecoding', true);
+
                         var that = this;
                         var key = file.key;
-
-                        this.game.cache.updateSound(key, 'isDecoding', true);
 
                         this.game.sound.context.decodeAudioData(file.data, function (buffer) {
                             if (buffer)
@@ -1382,13 +1381,11 @@ Phaser.Loader.prototype = {
         {
             if (this.preloadSprite.direction === 0)
             {
-                this.preloadSprite.rect.width = Math.floor((this.preloadSprite.width / 100) * this.progress);
-                this.preloadSprite.sprite.crop(this.preloadSprite.rect);
+                this.preloadSprite.crop.width = Math.floor((this.preloadSprite.width / 100) * this.progress);
             }
             else
             {
-                this.preloadSprite.rect.height = Math.floor((this.preloadSprite.height / 100) * this.progress);
-                this.preloadSprite.sprite.crop(this.preloadSprite.rect);
+                this.preloadSprite.crop.height = Math.floor((this.preloadSprite.height / 100) * this.progress);
             }
         }
 
@@ -1403,7 +1400,7 @@ Phaser.Loader.prototype = {
         {
             this.hasLoaded = true;
             this.isLoading = false;
-
+            
             this.removeAll();
 
             this.onLoadComplete.dispatch();

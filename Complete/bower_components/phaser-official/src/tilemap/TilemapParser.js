@@ -309,36 +309,6 @@ Phaser.TilemapParser = {
 
         map.images = images;
 
-        //  Tilesets
-        var tilesets = [];
-
-        for (var i = 0; i < json.tilesets.length; i++)
-        {
-            //  name, firstgid, width, height, margin, spacing, properties
-            var set = json.tilesets[i];
-            var newSet = new Phaser.Tileset(set.name, set.firstgid, set.tilewidth, set.tileheight, set.margin, set.spacing, set.properties);
-
-            if (set.tileproperties)
-            {
-                newSet.tileProperties = set.tileproperties;
-            }
-
-            newSet.rows = Math.round((set.imageheight - set.margin) / (set.tileheight + set.spacing));
-            newSet.columns = Math.round((set.imagewidth - set.margin) / (set.tilewidth + set.spacing));
-            newSet.total = newSet.rows * newSet.columns;
-
-            if (newSet.rows % 1 !== 0 || newSet.columns % 1 !== 0)
-            {
-                console.warn('TileSet image dimensions do not match expected dimensions. Tileset width/height must be evenly divisible by Tilemap tile width/height.');
-            }
-            else
-            {
-                tilesets.push(newSet);
-            }
-        }
-
-        map.tilesets = tilesets;
-
         //  Objects & Collision Data (polylines, etc)
         var objects = {};
         var collision = {};
@@ -368,7 +338,7 @@ Phaser.TilemapParser = {
                         properties: json.layers[i].objects[v].properties
 
                     };
-
+        
                     objects[json.layers[i].name].push(object);
                 }
                 else if (json.layers[i].objects[v].polyline)
@@ -403,13 +373,43 @@ Phaser.TilemapParser = {
         map.objects = objects;
         map.collision = collision;
 
+        //  Tilesets
+        var tilesets = [];
+
+        for (var i = 0; i < json.tilesets.length; i++)
+        {
+            //  name, firstgid, width, height, margin, spacing, properties
+            var set = json.tilesets[i];
+            var newSet = new Phaser.Tileset(set.name, set.firstgid, set.tilewidth, set.tileheight, set.margin, set.spacing, set.properties);
+
+            if (set.tileproperties)
+            {
+                newSet.tileProperties = set.tileproperties;
+            }
+
+            newSet.rows = Math.round((set.imageheight - set.margin) / (set.tileheight + set.spacing));
+            newSet.columns = Math.round((set.imagewidth - set.margin) / (set.tilewidth + set.spacing));
+            newSet.total = newSet.rows * newSet.columns;
+
+            if (newSet.rows % 1 !== 0 || newSet.columns % 1 !== 0)
+            {
+                console.warn('TileSet image dimensions do not match expected dimensions. Tileset width/height must be evenly divisible by Tilemap tile width/height.');
+            }
+            else
+            {
+                tilesets.push(newSet);
+            }
+        }
+
+        map.tilesets = tilesets;
+
         map.tiles = [];
 
         //  Finally lets build our super tileset index
         for (var i = 0; i < map.tilesets.length; i++)
         {
             var set = map.tilesets[i];
-
+    
             var x = set.tileMargin;
             var y = set.tileMargin;
 
@@ -454,4 +454,4 @@ Phaser.TilemapParser = {
 
     }
 
-};
+}

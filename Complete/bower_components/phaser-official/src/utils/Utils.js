@@ -11,7 +11,7 @@
 * @static
 */
 Phaser.Utils = {
-
+    
     /**
     * Get a unit dimension from a string.
     *
@@ -72,7 +72,7 @@ Phaser.Utils = {
         }
 
         return array;
-
+        
     },
 
     /**
@@ -80,7 +80,7 @@ Phaser.Utils = {
     * pad = the string to pad it out with (defaults to a space)
     * dir = 1 (left), 2 (right), 3 (both)
     * @method Phaser.Utils.pad
-    * @param {string} str - The target string.
+    * @param {string} str - The target string. 
     * @param {number} len - The number of characters to be added.
     * @param {number} pad - The string to pad it out with (defaults to a space).
     * @param {number} [dir=3] The direction dir = 1 (left), 2 (right), 3 (both).
@@ -99,17 +99,17 @@ Phaser.Utils = {
             switch (dir)
             {
                 case 1:
-                    str = new Array(len + 1 - str.length).join(pad) + str;
+                    str = Array(len + 1 - str.length).join(pad) + str;
                     break;
 
                 case 3:
                     var right = Math.ceil((padlen = len - str.length) / 2);
                     var left = padlen - right;
-                    str = new Array(left+1).join(pad) + str + new Array(right+1).join(pad);
+                    str = Array(left+1).join(pad) + str + Array(right+1).join(pad);
                     break;
 
                 default:
-                    str = str + new Array(len + 1 - str.length).join(pad);
+                    str = str + Array(len + 1 - str.length).join(pad);
                     break;
             }
         }
@@ -140,7 +140,7 @@ Phaser.Utils = {
         // the "constructor" property of certain host objects, ie. |window.location|
         // https://bugzilla.mozilla.org/show_bug.cgi?id=814622
         try {
-            if (obj.constructor && !({}).hasOwnProperty.call(obj.constructor.prototype, "isPrototypeOf"))
+            if (obj.constructor && !hasOwn.call(obj.constructor.prototype, "isPrototypeOf"))
             {
                 return false;
             }
@@ -191,7 +191,7 @@ Phaser.Utils = {
             --i;
         }
 
-        for (; i < length; i++)
+        for ( ; i < length; i++ )
         {
             // Only deal with non-null/undefined values
             if ((options = arguments[i]) != null)
@@ -245,7 +245,6 @@ Phaser.Utils = {
 */
 if (typeof Function.prototype.bind != 'function') {
 
-    /* jshint freeze: false */
     Function.prototype.bind = (function () {
 
         var slice = Array.prototype.slice;
@@ -253,29 +252,26 @@ if (typeof Function.prototype.bind != 'function') {
         return function (thisArg) {
 
             var target = this, boundArgs = slice.call(arguments, 1);
-
+ 
             if (typeof target != 'function')
             {
                 throw new TypeError();
             }
-
+ 
             function bound() {
                 var args = boundArgs.concat(slice.call(arguments));
                 target.apply(this instanceof bound ? this : thisArg, args);
             }
-
+ 
             bound.prototype = (function F(proto) {
-                if (proto)
-                {
-                    F.prototype = proto;
-                }
+                proto && (F.prototype = proto);
 
                 if (!(this instanceof F))
                 {
                     return new F;
                 }
             })(target.prototype);
-
+ 
             return bound;
         };
     })();
@@ -289,5 +285,5 @@ if (!Array.isArray)
     Array.isArray = function (arg)
     {
         return Object.prototype.toString.call(arg) == '[object Array]';
-    };
+    }
 }

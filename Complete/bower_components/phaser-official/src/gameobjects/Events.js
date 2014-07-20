@@ -22,7 +22,7 @@
 * @param {Phaser.Sprite} sprite - A reference to Description.
 */
 Phaser.Events = function (sprite) {
-
+    
     this.parent = sprite;
 
     this.onAddedToGroup = new Phaser.Signal();
@@ -30,7 +30,6 @@ Phaser.Events = function (sprite) {
     this.onKilled = new Phaser.Signal();
     this.onRevived = new Phaser.Signal();
     this.onOutOfBounds = new Phaser.Signal();
-    this.onEnterBounds = new Phaser.Signal();
 
     this.onInputOver = null;
     this.onInputOut = null;

@@ -417,23 +417,8 @@ Phaser.Physics.Ninja.Body.prototype = {
     */
     deltaY: function () {
         return this.shape.pos.y - this.shape.oldpos.y;
-    },
-
-    /**
-    * Destroys this body's reference to the sprite and system, and destroys its shape.
-    *
-    * @method Phaser.Physics.Ninja.Body#destroy
-    */
-    destroy: function() {
-        this.sprite = null;
-        this.system = null;
-        this.aabb = null;
-        this.tile = null;
-        this.circle = null;
-
-        this.shape.destroy();
-        this.shape = null;
     }
+
 };
 
 /**
@@ -441,7 +426,7 @@ Phaser.Physics.Ninja.Body.prototype = {
 * @property {number} x - The x position.
 */
 Object.defineProperty(Phaser.Physics.Ninja.Body.prototype, "x", {
-
+    
     get: function () {
         return this.shape.pos.x;
     },
@@ -457,7 +442,7 @@ Object.defineProperty(Phaser.Physics.Ninja.Body.prototype, "x", {
 * @property {number} y - The y position.
 */
 Object.defineProperty(Phaser.Physics.Ninja.Body.prototype, "y", {
-
+    
     get: function () {
         return this.shape.pos.y;
     },
@@ -474,7 +459,7 @@ Object.defineProperty(Phaser.Physics.Ninja.Body.prototype, "y", {
 * @readonly
 */
 Object.defineProperty(Phaser.Physics.Ninja.Body.prototype, "width", {
-
+    
     get: function () {
         return this.shape.width;
     }
@@ -487,7 +472,7 @@ Object.defineProperty(Phaser.Physics.Ninja.Body.prototype, "width", {
 * @readonly
 */
 Object.defineProperty(Phaser.Physics.Ninja.Body.prototype, "height", {
-
+    
     get: function () {
         return this.shape.height;
     }
@@ -500,7 +485,7 @@ Object.defineProperty(Phaser.Physics.Ninja.Body.prototype, "height", {
 * @readonly
 */
 Object.defineProperty(Phaser.Physics.Ninja.Body.prototype, "bottom", {
-
+    
     get: function () {
         return this.shape.pos.y + this.shape.yw;
     }
@@ -513,7 +498,7 @@ Object.defineProperty(Phaser.Physics.Ninja.Body.prototype, "bottom", {
 * @readonly
 */
 Object.defineProperty(Phaser.Physics.Ninja.Body.prototype, "right", {
-
+    
     get: function () {
         return this.shape.pos.x + this.shape.xw;
     }
@@ -526,7 +511,7 @@ Object.defineProperty(Phaser.Physics.Ninja.Body.prototype, "right", {
 * @readonly
 */
 Object.defineProperty(Phaser.Physics.Ninja.Body.prototype, "speed", {
-
+    
     get: function () {
         return Math.sqrt(this.shape.velocity.x * this.shape.velocity.x + this.shape.velocity.y * this.shape.velocity.y);
     }
@@ -539,7 +524,7 @@ Object.defineProperty(Phaser.Physics.Ninja.Body.prototype, "speed", {
 * @readonly
 */
 Object.defineProperty(Phaser.Physics.Ninja.Body.prototype, "angle", {
-
+    
     get: function () {
         return Math.atan2(this.shape.velocity.y, this.shape.velocity.x);
     }

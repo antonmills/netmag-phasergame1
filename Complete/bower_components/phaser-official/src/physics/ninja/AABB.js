@@ -1,4 +1,3 @@
-/* jshint camelcase: false */
 /**
 * @author       Richard Davey <rich@photonstorm.com>
 * @copyright    2014 Photon Storm Ltd.
@@ -19,7 +18,7 @@
 * @param {number} height - The height of this AABB.
 */
 Phaser.Physics.Ninja.AABB = function (body, x, y, width, height) {
-
+    
     /**
     * @property {Phaser.Physics.Ninja.Body} system - A reference to the body that owns this shape.
     */
@@ -136,7 +135,7 @@ Phaser.Physics.Ninja.AABB.prototype = {
     * @param {number} dy - Collision normal
     * @param {number} obj - Object this AABB collided with
     */
-    reportCollisionVsWorld: function (px, py, dx, dy) {
+    reportCollisionVsWorld: function (px, py, dx, dy, obj) {
 
         var p = this.pos;
         var o = this.oldpos;
@@ -245,6 +244,16 @@ Phaser.Physics.Ninja.AABB.prototype = {
         var vx1 = this.pos.x - this.oldpos.x;   //  Calc velocity of this object
         var vy1 = this.pos.y - this.oldpos.y;
         var dp1 = (vx1 * dx + vy1 * dy);         //  Find component of velocity parallel to collision normal
+        var nx1 = dp1 * dx;                      //  Project velocity onto collision normal
+        var ny1 = dp1 * dy;                      //  nx, ny is normal velocity
+
+        var dx2 = dx * -1;
+        var dy2 = dy * -1;
+        var vx2 = obj.pos.x - obj.oldpos.x;      //  Calc velocity of colliding object
+        var vy2 = obj.pos.y - obj.oldpos.y;
+        var dp2 = (vx2 * dx2 + vy2 * dy2);         //  Find component of velocity parallel to collision normal
+        var nx2 = dp2 * dx2;                      //  Project velocity onto collision normal
+        var ny2 = dp2 * dy2;                      //  nx, ny is normal velocity
 
         //  We only want to apply collision response forces if the object is travelling into, and not out of, the collision
         if (this.body.immovable && obj.body.immovable)
@@ -312,7 +321,7 @@ Phaser.Physics.Ninja.AABB.prototype = {
         }
         else
         {
-            dx = (this.pos.x + this.xw) - this.system.bounds.right;
+            dx = (this.pos.x + this.xw) - this.system.bounds.width;
 
             if (0 < dx)
             {
@@ -328,7 +337,7 @@ Phaser.Physics.Ninja.AABB.prototype = {
         }
         else
         {
-            dy = (this.pos.y + this.yw) - this.system.bounds.bottom;
+            dy = (this.pos.y + this.yw) - this.system.bounds.height;
 
             if (0 < dy)
             {
@@ -525,16 +534,16 @@ Phaser.Physics.Ninja.AABB.prototype = {
     projAABB_Half: function (x, y, obj, t) {
 
         //signx or signy must be 0; the other must be -1 or 1
-        //calculate the projection vector for the half-edge, and then
+        //calculate the projection vector for the half-edge, and then 
         //(if collision is occuring) pick the minimum
-
+        
         var sx = t.signx;
         var sy = t.signy;
-
+            
         var ox = (obj.pos.x - (sx*obj.xw)) - t.pos.x;//this gives is the coordinates of the innermost
         var oy = (obj.pos.y - (sy*obj.yw)) - t.pos.y;//point on the AABB, relative to the tile center
 
-        //we perform operations analogous to the 45deg tile, except we're using
+        //we perform operations analogous to the 45deg tile, except we're using 
         //an axis-aligned slope instead of an angled one..
 
         //if the dotprod of (ox,oy) and (sx,sy) is negative, the corner is in the slope
@@ -545,11 +554,11 @@ Phaser.Physics.Ninja.AABB.prototype = {
         {
             //collision; project delta onto slope and use this to displace the object
             sx *= -dp;//(sx,sy) is now the projection vector
-            sy *= -dp;
-
+            sy *= -dp;      
+                
             var lenN = Math.sqrt(sx*sx + sy*sy);
             var lenP = Math.sqrt(x*x + y*y);
-
+            
             if (lenP < lenN)
             {
                 //project along axis; note that we're assuming that this tile is horizontal OR vertical
@@ -559,14 +568,14 @@ Phaser.Physics.Ninja.AABB.prototype = {
                 return Phaser.Physics.Ninja.AABB.COL_AXIS;
             }
             else
-            {
+            {       
                 //note that we could use -= instead of -dp
                 obj.reportCollisionVsWorld(sx,sy,t.signx, t.signy, t);
-
+                    
                 return Phaser.Physics.Ninja.AABB.COL_OTHER;
             }
         }
-
+            
         return Phaser.Physics.Ninja.AABB.COL_NONE;
 
     },
@@ -591,7 +600,7 @@ Phaser.Physics.Ninja.AABB.prototype = {
 
         var sx = t.sx;
         var sy = t.sy;
-
+            
         //if the dotprod of (ox,oy) and (sx,sy) is negative, the corner is in the slope
         //and we need toproject it out by the magnitude of the projection of (ox,oy) onto (sx,sy)
         var dp = (ox*sx) + (oy*sy);
@@ -600,8 +609,8 @@ Phaser.Physics.Ninja.AABB.prototype = {
         {
             //collision; project delta onto slope and use this to displace the object
             sx *= -dp;//(sx,sy) is now the projection vector
-            sy *= -dp;
-
+            sy *= -dp;      
+            
             var lenN = Math.sqrt(sx*sx + sy*sy);
             var lenP = Math.sqrt(x*x + y*y);
 
@@ -620,7 +629,7 @@ Phaser.Physics.Ninja.AABB.prototype = {
                 return Phaser.Physics.Ninja.AABB.COL_OTHER;
             }
         }
-
+        
         return Phaser.Physics.Ninja.AABB.COL_NONE;
     },
 
@@ -635,7 +644,7 @@ Phaser.Physics.Ninja.AABB.prototype = {
     * @return {number} The result of the collision.
     */
     projAABB_22DegS: function (x, y, obj, t) {
-
+        
         var signx = t.signx;
         var signy = t.signy;
 
@@ -648,10 +657,10 @@ Phaser.Physics.Ninja.AABB.prototype = {
         {
             var ox = (obj.pos.x - (signx*obj.xw)) - (t.pos.x + (signx*t.xw));//this gives is the coordinates of the innermost
             var oy = (obj.pos.y - (signy*obj.yw)) - (t.pos.y - (signy*t.yw));//point on the AABB, relative to a point on the slope
-
+                                                        
             var sx = t.sx;//get slope unit normal
             var sy = t.sy;
-
+            
             //if the dotprod of (ox,oy) and (sx,sy) is negative, the corner is in the slope
             //and we need toproject it out by the magnitude of the projection of (ox,oy) onto (sx,sy)
             var dp = (ox*sx) + (oy*sy);
@@ -660,11 +669,11 @@ Phaser.Physics.Ninja.AABB.prototype = {
             {
                 //collision; project delta onto slope and use this to displace the object
                 sx *= -dp;//(sx,sy) is now the projection vector
-                sy *= -dp;
+                sy *= -dp;      
 
                 var lenN = Math.sqrt(sx*sx + sy*sy);
                 var lenP = Math.sqrt(x*x + y*y);
-
+                
                 var aY = Math.abs(penY);
 
                 if (lenP < lenN)
@@ -672,13 +681,13 @@ Phaser.Physics.Ninja.AABB.prototype = {
                     if (aY < lenP)
                     {
                         obj.reportCollisionVsWorld(0, penY, 0, penY/aY, t);
-
+                        
                         return Phaser.Physics.Ninja.AABB.COL_OTHER;
                     }
                     else
                     {
                         obj.reportCollisionVsWorld(x,y,x/lenP, y/lenP, t);
-
+                        
                         return Phaser.Physics.Ninja.AABB.COL_AXIS;
                     }
                 }
@@ -687,7 +696,7 @@ Phaser.Physics.Ninja.AABB.prototype = {
                     if (aY < lenN)
                     {
                         obj.reportCollisionVsWorld(0, penY, 0, penY/aY, t);
-
+                        
                         return Phaser.Physics.Ninja.AABB.COL_OTHER;
                     }
                     else
@@ -699,7 +708,7 @@ Phaser.Physics.Ninja.AABB.prototype = {
                 }
             }
         }
-
+        
         //if we've reached this point, no collision has occured
         return Phaser.Physics.Ninja.AABB.COL_NONE;
     },
@@ -721,10 +730,10 @@ Phaser.Physics.Ninja.AABB.prototype = {
 
         var ox = (obj.pos.x - (signx*obj.xw)) - (t.pos.x - (signx*t.xw));//this gives is the coordinates of the innermost
         var oy = (obj.pos.y - (signy*obj.yw)) - (t.pos.y + (signy*t.yw));//point on the AABB, relative to a point on the slope
-
+            
         var sx = t.sx;//get slope unit normal
         var sy = t.sy;
-
+            
         //if the dotprod of (ox,oy) and (sx,sy) is negative, the corner is in the slope
         //and we need toproject it out by the magnitude of the projection of (ox,oy) onto (sx,sy)
         var dp = (ox*sx) + (oy*sy);
@@ -733,7 +742,7 @@ Phaser.Physics.Ninja.AABB.prototype = {
         {
             //collision; project delta onto slope and use this to displace the object
             sx *= -dp;//(sx,sy) is now the projection vector
-            sy *= -dp;
+            sy *= -dp;      
 
             var lenN = Math.sqrt(sx*sx + sy*sy);
             var lenP = Math.sqrt(x*x + y*y);
@@ -741,18 +750,18 @@ Phaser.Physics.Ninja.AABB.prototype = {
             if (lenP < lenN)
             {
                 obj.reportCollisionVsWorld(x,y,x/lenP, y/lenP, t);
-
+                    
                 return Phaser.Physics.Ninja.AABB.COL_AXIS;
             }
             else
-            {
+            {       
                 obj.reportCollisionVsWorld(sx,sy,t.sx,t.sy,t);
-
+                                    
                 return Phaser.Physics.Ninja.AABB.COL_OTHER;
             }
-
+        
         }
-
+            
         return Phaser.Physics.Ninja.AABB.COL_NONE;
 
     },
@@ -782,7 +791,7 @@ Phaser.Physics.Ninja.AABB.prototype = {
 
             var sx = t.sx;//get slope unit normal
             var sy = t.sy;
-
+            
             //if the dotprod of (ox,oy) and (sx,sy) is negative, the corner is in the slope
             //and we need to project it out by the magnitude of the projection of (ox,oy) onto (sx,sy)
             var dp = (ox*sx) + (oy*sy);
@@ -791,7 +800,7 @@ Phaser.Physics.Ninja.AABB.prototype = {
             {
                 //collision; project delta onto slope and use this to displace the object
                 sx *= -dp;//(sx,sy) is now the projection vector
-                sy *= -dp;
+                sy *= -dp;      
 
                 var lenN = Math.sqrt(sx*sx + sy*sy);
                 var lenP = Math.sqrt(x*x + y*y);
@@ -803,13 +812,13 @@ Phaser.Physics.Ninja.AABB.prototype = {
                     if (aX < lenP)
                     {
                         obj.reportCollisionVsWorld(penX, 0, penX/aX, 0, t);
-
+                        
                         return Phaser.Physics.Ninja.AABB.COL_OTHER;
                     }
                     else
                     {
                         obj.reportCollisionVsWorld(x,y,x/lenP, y/lenP, t);
-
+                        
                         return Phaser.Physics.Ninja.AABB.COL_AXIS;
                     }
                 }
@@ -818,11 +827,11 @@ Phaser.Physics.Ninja.AABB.prototype = {
                     if (aX < lenN)
                     {
                         obj.reportCollisionVsWorld(penX, 0, penX/aX, 0, t);
-
+                        
                         return Phaser.Physics.Ninja.AABB.COL_OTHER;
                     }
                     else
-                    {
+                    {               
                         obj.reportCollisionVsWorld(sx,sy,t.sx,t.sy,t);
 
                         return Phaser.Physics.Ninja.AABB.COL_OTHER;
@@ -830,9 +839,9 @@ Phaser.Physics.Ninja.AABB.prototype = {
                 }
             }
         }
-
+        
         //if we've reached this point, no collision has occured
-        return Phaser.Physics.Ninja.AABB.COL_NONE;
+        return Phaser.Physics.Ninja.AABB.COL_NONE;    
 
     },
 
@@ -850,13 +859,13 @@ Phaser.Physics.Ninja.AABB.prototype = {
 
         var signx = t.signx;
         var signy = t.signy;
-
+            
         var ox = (obj.pos.x - (signx*obj.xw)) - (t.pos.x + (signx*t.xw));//this gives is the coordinates of the innermost
         var oy = (obj.pos.y - (signy*obj.yw)) - (t.pos.y - (signy*t.yw));//point on the AABB, relative to a point on the slope
-
+                                                        
         var sx = t.sx;//get slope unit normal
         var sy = t.sy;
-
+            
         //if the dotprod of (ox,oy) and (sx,sy) is negative, the corner is in the slope
         //and we need toproject it out by the magnitude of the projection of (ox,oy) onto (sx,sy)
         var dp = (ox*sx) + (oy*sy);
@@ -865,11 +874,11 @@ Phaser.Physics.Ninja.AABB.prototype = {
         {
             //collision; project delta onto slope and use this to displace the object
             sx *= -dp;//(sx,sy) is now the projection vector
-            sy *= -dp;
-
+            sy *= -dp;      
+                
             var lenN = Math.sqrt(sx*sx + sy*sy);
             var lenP = Math.sqrt(x*x + y*y);
-
+                
             if (lenP < lenN)
             {
                 obj.reportCollisionVsWorld(x,y,x/lenP, y/lenP, t);
@@ -877,14 +886,14 @@ Phaser.Physics.Ninja.AABB.prototype = {
                 return Phaser.Physics.Ninja.AABB.COL_AXIS;
             }
             else
-            {
+            {       
                 obj.reportCollisionVsWorld(sx,sy,t.sx,t.sy,t);
-
+                    
                 return Phaser.Physics.Ninja.AABB.COL_OTHER;
             }
         }
-
-        return Phaser.Physics.Ninja.AABB.COL_NONE;
+            
+        return Phaser.Physics.Ninja.AABB.COL_NONE;    
     },
 
     /**
@@ -921,7 +930,7 @@ Phaser.Physics.Ninja.AABB.prototype = {
             var lenP = Math.sqrt(x * x + y * y);
             obj.reportCollisionVsWorld(x, y, x / lenP, y / lenP, t);
 
-            return Phaser.Physics.Ninja.AABB.COL_AXIS;//we need to report
+            return Phaser.Physics.Ninja.AABB.COL_AXIS;//we need to report 		
         }
         else if (0 < pen)
         {
@@ -992,17 +1001,7 @@ Phaser.Physics.Ninja.AABB.prototype = {
         }
 
         return Phaser.Physics.Ninja.AABB.COL_NONE;
-
-    },
-
-    /**
-    * Destroys this AABB's reference to Body and System
-    *
-    * @method Phaser.Physics.Ninja.AABB#destroy
-    */
-    destroy: function() {
-        this.body = null;
-        this.system = null;
+		
     }
 
-};
+}
